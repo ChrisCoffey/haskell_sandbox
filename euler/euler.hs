@@ -35,23 +35,16 @@ fastFactors :: Int -> [Int]
 fastFactors n = factors n [1..end]
 	where end = floor . sqrt $ fromIntegral n
 
-largestPrimeFactor n = last (primeFactors n)
+fastFactorsInclusive n = n : (fastFactors n ) 
 
-primeFactors n = factor n primes
-  where
-    factor n (p:ps) 
-        | p*p > n        = [n]
-        | n `mod` p == 0 = p : factor (n `div` p) (p:ps)
-        | otherwise      =     factor n ps
+primeFactors n = factors n primes
+
+largestPrimeFactor n = last (primeFactors n)
 
 divisors n (x:xs)
 	| x^2 >n         = [n]
 	| n `mod` x == 0 = x: (n `div` x): divisors (n `div` x) xs
 	| otherwise		 = divisors n xs
-
-simpleDivisors :: Int -> [Int]
-simpleDivisors x = 1  : x : filter((== 0) . rem x) [2 .. x `div` 2]
-
 
 isPalindrome x = (show x) == (reverse $ show x)
 
@@ -92,18 +85,8 @@ problem9 = a * b * c
 sumOfPrimesLessThan limit = sum $ takeWhile (<limit) primes
 
 
--- Come back to problem 11 once I understand list manipulation better
+triangle n = (n * (n+1))/2
 
-triangle :: Int -> Int
-triangle n = (n*(n+1)) `div` 2
+triangles = map(\ x -> triangle x) [1..]
 
-triangles = map (triangle) [1..]
-
-
-trianglesWithNFactors :: Int -> Int
-trianglesWithNFactors n = head $ filter ((> n) . nDivisors) triangles
-	where nDivisors x  = product $ map ((+1) . length) (group (primeFactors x))
-
-strToIntList :: String -> [Int]
-strToIntList s = map (read . (:"")) s
-
+--trianglesWithNdivisors = take 1 $ filter(\ x -> (length (fastFactorsInclusive x) ) == 500) triangles
