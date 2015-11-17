@@ -1,3 +1,6 @@
+import System.Random hiding (split)
+
+
 --1
 last ls = (head . reverse) ls
 --2
@@ -56,12 +59,33 @@ split xs n = (take n xs, drop n xs)
 --18
 slice xs i k = take (k - i + 1) $ drop (max (i -1) 0) xs
 --19
-rotate :: [a] -> Int -> [a]
-rotate xs n | n < 0 = concat $ (drop xs n) : (take xs n)
-            | otherwise =  concat $ (drop xs n) : (take xs n)
-    
-
-
+rotate xs n 
+    | n > 0 = (drop n xs) ++ (take n xs)
+    | otherwise = let
+        dropsize = n + ( size xs)
+        in (drop dropsize xs ) ++ (take dropsize xs)
+--20
+removeAt xs n = let
+    h = take (n - 1) xs
+    t = drop (n - 1) xs
+    item = head t
+    in (item, h ++ (tail t))
+--21
+insertAt elem xs n = let
+    (l, r) = split xs (n - 1)
+    in l ++ (elem : r)
+--22
+range start end = build start (end - start) where
+    build s 0 = [s]    
+    build s e = [s] ++ (build (s + 1) (e - 1))
+--23
+rndSample xs n = build xs n where
+    build [] i = []
+    build as 0 = []
+    build as i = do
+        r <- getStdRandom $ randomR (0, ((size as) -1))
+        (e, rest) <- removeAt as r
+        return e:(build rest (i -1))
 
 
 
