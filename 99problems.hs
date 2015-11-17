@@ -41,7 +41,34 @@ decodeRLE ls = concatMap (\l -> f l) ls where
     f (Mult i x) = replicate i x
 --13
 directRLE:: Eq a => [a] -> [RLE a]
-directRLE (x:xs) = reverse $ foldl f ([], x, 1) xs where
-    f (acc, s, n) i = if s == i then (acc, s, n +1)
-                      else if n == 1 then ((Sing s):acc, i, 1) else ((Mult i s):acc, i, 1)
+directRLE (x:xs) = reverse $ map clean $ foldl f [(1, x)] xs where
+    clean (1, a) = Sing a
+    clean (i, a) = Mult i a
+    f (h@(i, a):as) e = if (e == a) then (i + 1, a):as else (1, e):h:as
+--14
+duplicate xs = foldr (\ a acc -> a:a:acc) [] xs
+--15
+duplicateN xs n = concat $ foldr (\ a acc -> (replicate n a) : acc) [] xs
+--16
+dropEvery xs n = foldr (\ (a,i) acc -> if i `mod` n == 0 then acc else a:acc) [] $ zip xs [1..]
+--17
+split xs n = (take n xs, drop n xs)
+--18
+slice xs i k = take (k - i + 1) $ drop (max (i -1) 0) xs
+--19
+rotate :: [a] -> Int -> [a]
+rotate xs n | n < 0 = concat $ (drop xs n) : (take xs n)
+            | otherwise =  concat $ (drop xs n) : (take xs n)
+    
+
+
+
+
+
+
+
+
+
+
+
 
