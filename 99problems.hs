@@ -1,3 +1,4 @@
+import Control.Monad
 import System.Random hiding (split)
 
 
@@ -95,4 +96,26 @@ rndSelect n m = do
     gen <- getStdGen 
     return $ take n [ x | x <- randomRs (1, m) gen]
 --25
+permute:: [a] -> IO [a]
+permute [] = return []
+permute (h:ls) = do
+    i <- randomRIO (0, (length ls) - 1)
+    xs <- permute ls 
+    return $ let (a, b) = splitAt i xs 
+             in (h:b) ++ a
+--26
+combo xs n = result 
+where 
+   (h:t) = xs
+    ys = map (\x -> h:[x]) t
+    result = 
+   where
+        build [] _ = []
+        build _ 0  = []
+        build (a:as) i = 
 
+
+
+
+
+                
