@@ -79,20 +79,20 @@ range start end = build start (end - start) where
     build s 0 = [s]    
     build s e = [s] ++ (build (s + 1) (e - 1))
 --23
-rndSample xs n = build xs n where
-    build [] i = []
-    build as 0 = []
-    build as i = do
-        r <- getStdRandom $ randomR (0, ((size as) -1))
-        (e, rest) <- removeAt as r
-        return e:(build rest (i -1))
+rndSample :: (RandomGen g) => [a] -> Int -> g -> (g, [a])
+rndSample _ 0 g = (g, [])
+rndSample [] _ g = (g, [])
+rndSample xs i g = rndSample ys (i - 1) gg where
+    (n, gg) = randomR (0, (length xs) -1) g
+    (e, ys) = removeAt xs n
 
-
-
-
-
-
-
-
-
+rndSample' xs n = do
+    gen <- getStdGen
+    return $ take n [ xs !! x | x <- randomRs (0, (length xs) - 1) gen]
+--These work but are imperfect because the sequences generated seem to be deterministic
+--24
+rndSelect n m = do
+    gen <- getStdGen 
+    return $ take n [ x | x <- randomRs (1, m) gen]
+--25
 
