@@ -107,4 +107,13 @@ permute (h:ls) = do
 --26
 combo xs 0 = [[]]
 combo xs n = [xs!!i : x| i <- [0..(length xs) -1], x <- combo (drop (i + 1) xs) (n -1)]
-    
+--27
+vGroups :: [a] -> [Int] -> [[a]]
+vGroups xs ns = let
+    (a:as) = map (\i -> combo xs i) ns
+    in build a as where
+        build [] _ = []
+        build _ [] = []
+        build (h:t) (ys:rest) = h:(build ys rest) ++ (build t (ys:rest))
+
+
