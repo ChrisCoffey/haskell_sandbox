@@ -128,4 +128,27 @@ vGroups xs ns = build xs ns where
         block = combo ys n
         in map (\elem -> elem : concat (build (except elem ys) ns)) block
 --28
+--a via insertion sort
+partition :: [(Int, a)] -> Int -> ([a], [a], [a])
+partition ls a = let
+    lessThan = map (\(i,v) -> v) $ filter (\(i, v) -> i < a) ls
+    same = map (\(i, v) -> v) $ filter (\(i, v) -> i == a) ls
+    greater = map(\(i, v) -> v) filter (\(i, v) -> i > a) ls
+    in (lessThan, same, greater)
 
+lengthSort :: [[a]] -> [[a]]
+lengthSort xs = let
+    lengths = map (\ls -> length ls) xs
+    pairs = zip lengths xs
+    in sorted pairs where
+        sorted [] = []
+        sorted (p:ps) = let
+            (l,e,g) = partition ps p
+            in l ++ e ++ g
+
+
+
+
+
+
+ 
