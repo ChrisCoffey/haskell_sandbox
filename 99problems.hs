@@ -107,13 +107,25 @@ permute (h:ls) = do
 --26
 combo xs 0 = [[]]
 combo xs n = [xs!!i : x| i <- [0..(length xs) -1], x <- combo (drop (i + 1) xs) (n -1)]
---27
-vGroups :: [a] -> [Int] -> [[a]]
-vGroups xs ns = let
-    (a:as) = map (\i -> combo xs i) ns
-    in build a as where
-        build [] _ = []
-        build _ [] = []
-        build (h:t) (ys:rest) = h:(build ys rest) ++ (build t (ys:rest))
 
+contains :: Eq a => a -> [a] -> Bool
+contains x [] = False
+contains a (x:xs) = (a == x) || (contains a xs)
+
+forAll :: Eq a => (a -> Bool) -> [a] -> Bool
+forAll _ [] = True
+forAll f (x:xs) = (f x) && (forAll f xs)
+
+except :: Eq a => [a] -> [a] -> [a]
+except [] _ = []
+except _ [] = []
+except xs ys = foldr (\e acc -> if(contains e xs) then acc else e:acc) [] ys
+--27
+vGroups :: Eq a => [a] -> [Int] -> [[[a]]]
+vGroups xs ns = build xs ns where
+    build _ [] = []
+    build ys (n:ns) = let
+        block = combo ys n
+        in map (\elem -> elem : concat (build (except elem ys) ns)) block
+--28
 
