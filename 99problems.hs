@@ -1,7 +1,7 @@
 import Control.Monad
 
+import Data.List hiding (partition)
 import System.Random hiding (split)
-
 
 --1
 last ls = (head . reverse) ls
@@ -129,26 +129,27 @@ vGroups xs ns = build xs ns where
         in map (\elem -> elem : concat (build (except elem ys) ns)) block
 --28
 --a via insertion sort
-partition :: [(Int, a)] -> Int -> ([a], [a], [a])
+partition :: Ord a => [a] -> a -> ([a], [a], [a])
 partition ls a = let
-    lessThan = map (\(i,v) -> v) $ filter (\(i, v) -> i < a) ls
-    same = map (\(i, v) -> v) $ filter (\(i, v) -> i == a) ls
-    greater = map(\(i, v) -> v) filter (\(i, v) -> i > a) ls
+    lessThan = filter (\v -> v < a) ls
+    same = filter (\v -> v == a) ls
+    greater = filter (\ v -> v > a) ls
     in (lessThan, same, greater)
 
-lengthSort :: [[a]] -> [[a]]
-lengthSort xs = let
-    lengths = map (\ls -> length ls) xs
-    pairs = zip lengths xs
-    in sorted pairs where
-        sorted [] = []
-        sorted (p:ps) = let
-            (l,e,g) = partition ps p
-            in l ++ e ++ g
+insertionSort :: Ord a => [a] -> [a]
+insertionSort [] = []
+insertionSort (a:as) = let
+    (ls, s, gs) = partition as a
+    in (insertionSort ls) ++ [a] ++ s ++ (insertionSort gs)
 
+lengthSort :: Ord a => [[a]] -> [[a]]
+lengthSort ls = let
+    idxed = map (\a -> (length a, a)) ls
+    sorted = insertionSort idxed
+    in map (\(i,v) -> v) sorted
 
-
-
-
-
- 
+--lengthFrequencySort :: Ord a => [[a]] -> [[a]]
+lengthFrequencySort ls = let
+    idxed = map (\a -> (length a, a)) ls
+    grouped = groupBy (\(i, v) (j, w) -> i == j) idxed
+    in grouped
