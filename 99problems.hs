@@ -1,6 +1,6 @@
 import Control.Monad
 
-import Data.List hiding (partition)
+import qualified Data.Map as Map
 import System.Random hiding (split)
 
 --1
@@ -148,8 +148,18 @@ lengthSort ls = let
     sorted = insertionSort idxed
     in map (\(i,v) -> v) sorted
 
+--this certainly already exists, but I need it without access to docs :(
+sliding :: [a] -> Int -> [[a]]
+sliding [] _ = []
+sliding ls i = let
+    slice = take i ls
+    rest = drop i ls
+    in slice : (sliding rest i)
 --lengthFrequencySort :: Ord a => [[a]] -> [[a]]
 lengthFrequencySort ls = let
     idxed = map (\a -> (length a, a)) ls
-    grouped = groupBy (\(i, v) (j, w) -> i == j) idxed
-    in grouped
+    lengthGroups = foldr (\(i, xs) acc -> Map.insertWith (++) i xs acc) Map.empty idxed
+    cleaned = map (\(i, x) -> (i, (sliding x i))) $ Map.toList lengthGroups 
+    prepared = map (\(_, ls) -> (length ls, ls)) cleaned
+    sorted = insertionSort prepared
+    in sorted 
