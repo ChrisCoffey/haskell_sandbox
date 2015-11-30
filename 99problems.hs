@@ -163,3 +163,12 @@ lengthFrequencySort ls = let
     prepared = map (\(_, ls) -> (length ls, ls)) cleaned
     sorted = insertionSort prepared
     in sorted 
+--31
+isPrime :: Int -> Bool
+isPrime n = not ( any (\x -> n `mod` x == 0)  [2.. (sqrt n)])
+--32
+gcd' :: Int -> Int -> Int
+gcd' a 0 = a
+gcd' a b = gcd b (a `mod` b)
+
+    
