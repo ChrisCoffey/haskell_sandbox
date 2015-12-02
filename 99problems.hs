@@ -207,3 +207,42 @@ listGoldbachs a b = map (\x -> goldbach x)  [n | n <- [a..b], even n]
 
 listGoldbachs' a b x = 
     filter (\(m,n) -> m > x && n > x ) $ listGoldbachs a b
+--46
+_and a b = a && b
+_or a b = a || b
+_nand a b = not (and' a b)
+_nor a b = not (or' a b)
+_xor a b = and' (not (and' a b)) (or' a b)
+_impl a b = if (a) then b else True
+_equiv a b = a == b
+
+truthTable :: (Bool -> Bool -> Bool) -> [(Bool, Bool, Bool)]
+truthTable pred = let
+    args = [(x, y) | x <- [0..1], y <- [0..1]]
+    bools = map (\(x, y) -> (x == 1, y == 1)) args
+    in map (\(a,b) -> (a, b, pred a b)) bools
+--47
+infixl 7 `and'`
+a `and'` b = _and a b
+infixl 6 `or'`
+a `or'` b = _or a b
+a `nand'` b = _nand a b
+a `nor'` b = _nor a b
+a `xor'` b = _xor a b
+infixl 5 `impl'`
+a `impl'` b = _impl a b
+infixl 4 `equiv'`
+a `equiv'` b = _equiv a b
+
+--48
+distinct ls =
+    foldr (\x acc -> if (contains x acc) then acc else x:acc ) [] ls
+
+truthTableLen :: Int -> ([Bool] -> Bool) -> [[Bool]]
+truthTableLen len pred = let
+    args = distinct $ combo (concat $ map (\_ -> [True, False]) [1..len]) len
+    res = map (\arg -> arg ++ [pred arg]) args    
+    in res
+--49
+ 
+    
