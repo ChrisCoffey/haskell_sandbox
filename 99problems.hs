@@ -1,5 +1,6 @@
 import Control.Monad
 
+import Data.List (group)
 import qualified Data.Map as Map
 import System.Random hiding (split)
 
@@ -163,12 +164,46 @@ lengthFrequencySort ls = let
     prepared = map (\(_, ls) -> (length ls, ls)) cleaned
     sorted = insertionSort prepared
     in sorted 
---31
+--31 the lazy way
 isPrime :: Int -> Bool
-isPrime n = not ( any (\x -> n `mod` x == 0)  [2.. (sqrt n)])
+isPrime n = let
+    m = floor $ sqrt $ fromIntegral n
+    hasDivisor = any (\x -> n `mod` x == 0) [2..m]
+    in not hasDivisor
 --32
 gcd' :: Int -> Int -> Int
 gcd' a 0 = a
 gcd' a b = gcd b (a `mod` b)
+--33
+coPrime :: Int -> Int -> Bool
+coPrime a b = 1 == gcd a b
+--34
+totientPhi :: Int -> Int
+totientPhi a = length [n | n <- [1 .. a], coPrime a n]
+--35
+primeFactors :: Int -> [Int]
+primeFactors a 
+   | isPrime a  = a : []
+   | otherwise  = (head ls) : (primeFactors m)
+   where
+        x = floor $ sqrt $ fromIntegral a
+        ls =  [n | n <- [2 .. x], isPrime n, a `mod` n == 0 ]
+        m = a `div` (head ls)
+--36
+primeFactorsMult a = 
+    map (\ls -> (head ls, length ls)) . group . primeFactors $ a
+--37
+totient' a = 
+   product $  map (\(p, m) -> (p - 1) * p ^ (m -1)) . primeFactorsMult $ a
+--38
+--39 very slow for large ranges
+primes start end = filter isPrime $ filter (\i -> i `mod` 2 == 1) [start..end]
+--40
+goldbach n = let
+    p = [x | x <- primes 3 n, isPrime (n - x)]
+    in (head p, n - head p) 
+--41
+listGoldbachs a b = map (\x -> goldbach x)  [n | n <- [a..b], even n]
 
-    
+listGoldbachs' a b x = 
+    filter (\(m,n) -> m > x && n > x ) $ listGoldbachs a b
