@@ -244,5 +244,10 @@ truthTableLen len pred = let
     res = map (\arg -> arg ++ [pred arg]) args    
     in res
 --49
- 
+grayCode n = build n where
+    f a = map(\s -> a++s)
+    build 1 = ["0", "1"]
+    build x = f "0" (build (x-1) ) ++ f "1" (reverse $ build (x -1))    
+--50
+
     
