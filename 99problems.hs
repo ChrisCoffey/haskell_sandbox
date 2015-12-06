@@ -1,6 +1,6 @@
 import Control.Monad
-
-import Data.List (group)
+import Data.List (group,sort, sortBy, insertBy)
+import Data.Ord (comparing)
 import qualified Data.Map as Map
 import System.Random hiding (split)
 
@@ -249,5 +249,16 @@ grayCode n = build n where
     build 1 = ["0", "1"]
     build x = f "0" (build (x-1) ) ++ f "1" (reverse $ build (x -1))    
 --50
+data  BinaryTree a = Leaf a | Branch (BinaryTree a) (BinaryTree a) deriving Show
 
-    
+huffman :: (Ord a, Ord b, Num b) => [(a, b)] -> [(a, String)]
+huffman ls = sortBy (comparing fst) $ serialize $ makeTree $ sortBy (comparing fst) $ 
+        [(weight, Leaf v)| (v, weight) <- ls]
+    where makeTree [(_, t)] = t
+          makeTree ((weight, a):(weight',b):rest) = 
+              makeTree $ insertBy (comparing fst) (weight + weight', Branch a b) rest
+          serialize (Branch l r) = 
+              [(c, '0':code) | (c, code) <- serialize l] ++ [(c, '1':code)| (c, code) <- serialize r]
+          serialize  (Leaf c) = [(c, "")]
+
+
