@@ -1,5 +1,11 @@
-import Data.List.Split
+{-# LANGUAGE ScopedTypeVariables #-}
+
+import Data.List.Split (splitOn)
+import Data.List.Utils hiding (contains)
+import Data.List (union)
 import Data.Hash.MD5
+import Data.Matrix
+import Data.Bits
 
 elevator s = 
    foldr (\c acc -> if (c == '(') then acc + 1 else acc -1) 0 s  
@@ -84,5 +90,33 @@ niceList file rules = do
     let ls = lines contents
     let niceCount = length $ filter(\s -> rules s) ls
     putStrLn (show niceCount)
-   
- 
+  
+differenceL as bs = 
+    foldr (\e acc -> if(contains e bs) then acc else (e:acc)) [] as
+
+symDifferenceL as bs = 
+    (differenceL as bs) ++ (differenceL bs as)
+
+gm :: Matrix Int -> (Int, Int) -> Int
+gm m (x,y) = getElem x y m
+
+data Act = On | Off | Toggle deriving Show
+
+lightsGrid file = do
+    contents <- readFile file
+    let ls = lines contents
+    let makePointRange s = map (\(x:y:[])-> (read x :: Int, read y :: Int)) $ map (\pt -> split "," pt) $ split " through " s
+    let cleaned = clean ls where
+        clean [] = []
+        clean (('t':'u':'r':'n':' ':'o':'n':' ':pts):rest) = (On, makePointRange pts) : (clean rest)
+        clean (('t':'u':'r':'n':' ':'o':'f':'f':' ':pts):rest) = (Off, makePointRange pts): (clean rest) 
+        clean (('t':'o':'g':'g':'l':'e':' ':pts):rest) = (Toggle, makePointRange pts): (clean rest) 
+    let inst = map (\(i, (x,y):(x',y'):[])-> (i, [(x1 + 1,y1 + 1)| x1 <- [(x:: Int)..x'], y1 <- [(y :: Int)..y']])) cleaned
+    let m = matrix 1000 1000 $ (\_ -> 0)
+    let transformed = foldl (\acc (i,ls) -> case i of On     -> foldr (\pt acc'-> setElem 1 pt acc') acc ls
+                                                      Off    -> foldr (\pt acc'-> setElem 0 pt acc') acc ls
+                                                      Toggle -> foldr (\pt acc'-> setElem (1 `xor` ( gm acc' pt) ) pt acc') acc ls) m inst
+    putStrLn (show $ sum $ toList transformed)
+
+
+        
