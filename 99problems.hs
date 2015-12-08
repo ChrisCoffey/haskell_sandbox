@@ -129,7 +129,6 @@ vGroups xs ns = build xs ns where
         block = combo ys n
         in map (\elem -> elem : concat (build (except elem ys) ns)) block
 --28
---a via insertion sort
 partition :: Ord a => [a] -> a -> ([a], [a], [a])
 partition ls a = let
     lessThan = filter (\v -> v < a) ls
@@ -137,16 +136,16 @@ partition ls a = let
     greater = filter (\ v -> v > a) ls
     in (lessThan, same, greater)
 
-insertionSort :: Ord a => [a] -> [a]
-insertionSort [] = []
-insertionSort (a:as) = let
+quicksort :: Ord a => [a] -> [a]
+quicksort [] = []
+quicksort (a:as) = let
     (ls, s, gs) = partition as a
-    in (insertionSort ls) ++ [a] ++ s ++ (insertionSort gs)
+    in (quicksort ls) ++ [a] ++ s ++ (quicksort gs)
 
 lengthSort :: Ord a => [[a]] -> [[a]]
 lengthSort ls = let
     idxed = map (\a -> (length a, a)) ls
-    sorted = insertionSort idxed
+    sorted = quicksort idxed
     in map (\(i,v) -> v) sorted
 
 --this certainly already exists, but I need it without access to docs :(
@@ -162,7 +161,7 @@ lengthFrequencySort ls = let
     lengthGroups = foldr (\(i, xs) acc -> Map.insertWith (++) i xs acc) Map.empty idxed
     cleaned = map (\(i, x) -> (i, (sliding x i))) $ Map.toList lengthGroups 
     prepared = map (\(_, ls) -> (length ls, ls)) cleaned
-    sorted = insertionSort prepared
+    sorted = quicksort prepared
     in sorted 
 --31 the lazy way
 isPrime :: Int -> Bool
@@ -261,4 +260,8 @@ huffman ls = sortBy (comparing fst) $ serialize $ makeTree $ sortBy (comparing f
               [(c, '0':code) | (c, code) <- serialize l] ++ [(c, '1':code)| (c, code) <- serialize r]
           serialize  (Leaf c) = [(c, "")]
 
+data Tree a = Empty | Branch a (Tree a) (Tree a) deriving (Show, Eq)
+leaf x = Branch x Empty Empty
+--55
+cBalTree depth = 
 

@@ -2,7 +2,7 @@
 
 import Data.List.Split (splitOn)
 import Data.List.Utils hiding (contains)
-import Data.List (union)
+import Data.List (union, isInfixOf)
 import Data.Hash.MD5
 import Data.Matrix
 import Data.Bits
@@ -118,5 +118,19 @@ lightsGrid file = do
                                                       Toggle -> foldr (\pt acc'-> setElem (1 `xor` ( gm acc' pt) ) pt acc') acc ls) m inst
     putStrLn (show $ sum $ toList transformed)
 
+--did a couple in scala
+miniSeq = 
+    ["\"cyxdpkh\\\\\\\"\"", "\"\"", "\"abc\"", "\"aaa\\\"aaa\"", "\"\\x27\""]
 
-        
+lineSpace file = do
+    contents <- readFile file
+    let lns = lines contents
+    let codeLengths = foldr (\ln acc -> acc + (length ln)) 0 lns
+    let doEscapes = f where
+            f ('\\':'\\':xs)    = ('\\':doEscapes xs)
+            f ('\\':'"':xs)     = ('"':doEscapes xs)
+            f ('\\':'x':x:y:xs) = ('!':doEscapes xs)
+            f (x:xs)            = (x:doEscapes xs)
+            f []                = []
+    let escapeLengths = foldr (\ln acc-> acc + (length ln) -2) 0 $ map doEscapes lns
+    putStrLn (show (codeLengths - escapeLengths ))
