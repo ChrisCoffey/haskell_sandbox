@@ -1,8 +1,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
+import qualified Data.Set as S (Set, member, fromList, insert, union) 
 import Data.List.Split (splitOn)
 import Data.List.Utils hiding (contains)
-import Data.List (union, isInfixOf)
+import Data.List (union, isInfixOf, sort)
 import Data.Hash.MD5
 import Data.Matrix
 import Data.Bits
@@ -145,9 +146,41 @@ encodedLineSpace file = do
        e (x:xs)      = (x:doEncode xs) 
        e []          = []
    let encodedLengths = foldr (\ln acc-> acc + (length ln) +2) 0 $ map doEncode lns
-   putStrLn (show $ map doEncode lns)
    putStrLn (show (encodedLengths - codeLengths))
 
+data WEdge a = WEdge a a Int  deriving Show
 
+instance (Eq a) => Eq (WEdge a) where
+    WEdge x y z == WEdge a b c = x  == a && y == b && z == c
+
+--note can swapping the compare provide a maximal spanning tree???
+instance Eq a => Ord (WEdge a) where
+    (WEdge _ _ w) `compare` (WEdge _ _ y) = w `compare` y
+
+mst :: Ord a => ([WEdge a], [S.Set a]) -> WEdge a -> ([WEdge a], [S.Set a])
+mst (es, sets) e@(WEdge a b w) = step $ extract sets where
+    step (rest, Nothing, Nothing) = (e : es, S.fromList [a,b]:rest) 
+    step (rest, Just as, Nothing) = (e: es, (S.insert b as) : rest)
+    step (rest, Nothing, Just bs) = (e:es, (S.insert a bs):rest)
+    step (rest, Just as, Just bs) | as == bs = (es, sets) -- this indicates a cycle, so the edge is not added
+                                  | otherwise = (e: es, (S.union as bs):rest)
+    extract = foldr f ([], Nothing, Nothing) where
+        f s (list, seta, setb) = let
+            ls' = if S.member a s || S.member b s then list else s:list
+            seta' = if S.member a s then Just s else seta
+            setb' = if S.member b s then Just s else setb
+            in (ls', seta', setb')
+
+shortestPath file = do
+    contents <- fmap lines (readFile file)
+    let parse = p where
+        p xs = let 
+            (start:rest:[]) = split " to " xs
+            (end: weight:[]) = split " = " rest 
+            in (start, (read weight :: Int), end)
+    let clean = map parse contents
+    let edges = map(\(s,w,e)-> WEdge s e w) clean
+    let kruskal = foldl mst ([], []) . sort
+    putStrLn (show $  kruskal edges)        
 
 
