@@ -134,3 +134,20 @@ lineSpace file = do
             f []                = []
     let escapeLengths = foldr (\ln acc-> acc + (length ln) -2) 0 $ map doEscapes lns
     putStrLn (show (codeLengths - escapeLengths ))
+
+encodedLineSpace file = do
+   contents <- readFile file
+   let lns = lines contents
+   let codeLengths = foldr(\ln acc-> acc + (length ln)) 0 lns
+   let doEncode = e where
+       e ('\\':xs)   = ('\\':'\\':doEncode xs)
+       e ('\"':xs)   = ('\\':'\"':doEncode xs) 
+       e (x:xs)      = (x:doEncode xs) 
+       e []          = []
+   let encodedLengths = foldr (\ln acc-> acc + (length ln) +2) 0 $ map doEncode lns
+   putStrLn (show $ map doEncode lns)
+   putStrLn (show (encodedLengths - codeLengths))
+
+
+
+
