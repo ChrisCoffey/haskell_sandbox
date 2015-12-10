@@ -9,6 +9,7 @@ import Data.Ord (comparing)
 import Data.Hash.MD5
 import Data.Matrix
 import Data.Bits
+import Data.Char
 
 elevator s = 
    foldr (\c acc -> if (c == '(') then acc + 1 else acc -1) 0 s  
@@ -235,4 +236,9 @@ hamPath' file = do
         ws = map (pathLength pathMap) edges
         weightedPaths = zip edges ws
     print $ maximumBy (comparing snd) weightedPaths
-        
+      
+lookNSay ns 0 = ns 
+lookNSay (x:ns) iter = let
+    (a, ln, xs) = foldl (\(prev, ln, ls) c-> if(c == prev) then (prev, ln + 1, ls) else (c, 1, prev:(chr (48 +ln)):ls)) (x, 1, []) ns
+    step = reverse $ a:(chr (48 +ln)):xs
+    in lookNSay step (iter - 1)
