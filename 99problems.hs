@@ -260,8 +260,3 @@ huffman ls = sortBy (comparing fst) $ serialize $ makeTree $ sortBy (comparing f
               [(c, '0':code) | (c, code) <- serialize l] ++ [(c, '1':code)| (c, code) <- serialize r]
           serialize  (Leaf c) = [(c, "")]
 
-data Tree a = Empty | Branch a (Tree a) (Tree a) deriving (Show, Eq)
-leaf x = Branch x Empty Empty
---55
-cBalTree depth = 
-

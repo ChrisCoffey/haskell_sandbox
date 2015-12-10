@@ -1,9 +1,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
+import qualified Data.Map as M
 import qualified Data.Set as S (Set, member, fromList, insert, union) 
 import Data.List.Split (splitOn)
 import Data.List.Utils hiding (contains)
-import Data.List (union, isInfixOf, sort)
+import Data.List (union, isInfixOf, sort, permutations, minimumBy, maximumBy, nub)
+import Data.Ord (comparing)
 import Data.Hash.MD5
 import Data.Matrix
 import Data.Bits
@@ -155,13 +157,13 @@ instance (Eq a) => Eq (WEdge a) where
 
 --note can swapping the compare provide a maximal spanning tree???
 instance Eq a => Ord (WEdge a) where
-    (WEdge _ _ w) `compare` (WEdge _ _ y) = w `compare` y
+    (WEdge _ _ w) `compare` (WEdge _ _ y) = y `compare` w
 
 mst :: Ord a => ([WEdge a], [S.Set a]) -> WEdge a -> ([WEdge a], [S.Set a])
 mst (es, sets) e@(WEdge a b w) = step $ extract sets where
-    step (rest, Nothing, Nothing) = (e : es, S.fromList [a,b]:rest) 
-    step (rest, Just as, Nothing) = (e: es, (S.insert b as) : rest)
-    step (rest, Nothing, Just bs) = (e:es, (S.insert a bs):rest)
+    step (rest, Nothing, Nothing) = (e: es, S.fromList [a,b] :rest) 
+    step (rest, Just as, Nothing) = (e: es, (S.insert b as) :rest)
+    step (rest, Nothing, Just bs) = (e: es, (S.insert a bs) :rest)
     step (rest, Just as, Just bs) | as == bs = (es, sets) -- this indicates a cycle, so the edge is not added
                                   | otherwise = (e: es, (S.union as bs):rest)
     extract = foldr f ([], Nothing, Nothing) where
@@ -170,7 +172,7 @@ mst (es, sets) e@(WEdge a b w) = step $ extract sets where
             seta' = if S.member a s then Just s else seta
             setb' = if S.member b s then Just s else setb
             in (ls', seta', setb')
-
+--turns out this was the wrong algorithm... this is the minimum spanning tree
 shortestPath file = do
     contents <- fmap lines (readFile file)
     let parse = p where
@@ -182,5 +184,55 @@ shortestPath file = do
     let edges = map(\(s,w,e)-> WEdge s e w) clean
     let kruskal = foldl mst ([], []) . sort
     putStrLn (show $  kruskal edges)        
+    let weights = sum . map(\(WEdge a b c)-> c) . fst
+    putStrLn (show $ weights $ kruskal edges)
 
+hamPath file = do
+    contents <- fmap lines (readFile file)
+    let parse = p where
+        p xs = let 
+            (start:rest:[]) = split " to " xs
+            (end: weight:[]) = split " = " rest 
+            in (start, (read weight :: Int), end)
+    let clean = map parse contents
+    let edges = map(\(s,w,e)-> WEdge s e w) clean
+    let perms = permutations $ edges
+    let ps = map(\ls -> take 7 ls) perms
+    let path = f where
+        f (x:[]) = True
+        f ((WEdge _ x _):e@(WEdge a _ _):rest) = x == a && f (e:rest)
+    let paths = filter path ps
+    putStrLn (show $ length edges)
 
+--my version
+type Weight = Int
+type Vert = String
+type Edge = (Vert, Vert)
+type GraphM = M.Map Edge Weight
+
+vertices :: GraphM -> [Vert]
+vertices = nub . map fst . M.keys
+
+getEdges :: [Vert] -> [Edge]
+getEdges vs = zip  vs $ tail vs
+
+weights :: GraphM -> Edge -> Weight
+weights = (M.!)
+
+pathLength :: GraphM -> [Edge] -> Weight
+pathLength g = sum . map (weights g)
+
+--concat map basically flat map
+-- :: not always required for stirng/char -> int
+cleverRead = M.fromList . concatMap (f . words) . lines
+    where f [a,_,b,_,d] = [((a,b), read d),((b,a), read d)]
+
+hamPath' file = do 
+    pathMap <- fmap cleverRead (readFile file)
+    let vs = vertices pathMap
+        perms = permutations vs
+        edges = map getEdges perms
+        ws = map (pathLength pathMap) edges
+        weightedPaths = zip edges ws
+    print $ maximumBy (comparing snd) weightedPaths
+        
