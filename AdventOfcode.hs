@@ -4,7 +4,7 @@ import qualified Data.Map as M
 import qualified Data.Set as S (Set, member, fromList, insert, union) 
 import Data.List.Split (splitOn)
 import Data.List.Utils hiding (contains)
-import Data.List (union, isInfixOf, sort, permutations, minimumBy, maximumBy, nub)
+import Data.List (union, isInfixOf, sort, permutations, minimumBy, maximumBy, nub, group)
 import Data.Ord (comparing)
 import Data.Hash.MD5
 import Data.Matrix
@@ -242,3 +242,36 @@ lookNSay (x:ns) iter = let
     (a, ln, xs) = foldl (\(prev, ln, ls) c-> if(c == prev) then (prev, ln + 1, ls) else (c, 1, prev:(chr (48 +ln)):ls)) (x, 1, []) ns
     step = reverse $ a:(chr (48 +ln)):xs
     in lookNSay step (iter - 1)
+
+--no wifi, but these functions certainly already exist
+zipWithIndex :: [a] -> [(Int, a)]
+zipWithIndex [] = []
+zipWithIndex (x:xs) = 
+    reverse $ foldl (\(b@(p, _):a) c-> (p+1, c):b:a) [(0, x)] xs
+
+pairs ls = 
+    (>= 2) . length . filter ((>= 2) . length) . group $ ls
+
+goodLetter [] = True
+goodLetter (a:as) 
+    | a == 'i' = False
+    | a == 'l' = False
+    | a == 'o' = False
+    | otherwise = True
+
+strait (a:b:c:rest) = a == succ b && b == succ c || strait (b:c:rest)
+strait (a:b:[]) = False
+
+nextPw ('z':b:rest)  = 'a': nextPw (b:rest)
+nextPw ['z'] = ['a']
+nextPw (x:rest) = (succ x): rest
+
+legit s = pairs s && goodLetter s && strait s
+
+makeSantaPw inStr = 
+    map reverse $ filter legit (iterate nextPw (reverse inStr)) 
+
+--bit of grep and awk
+--grep -E '[0-9]{1,}' 12.in | sed 's/ //g;s/.*://g;s/\,//g;'| awk '{s+=$1} END {print s}'
+
+-- not familiar enough with haskell to handle this. Did it in js
