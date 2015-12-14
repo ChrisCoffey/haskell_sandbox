@@ -277,15 +277,51 @@ makeSantaPw inStr =
 --grep -E '[0-9]{1,}' 12.in | sed 's/ //g;s/.*://g;s/\,//g;'| awk '{s+=$1} END {print s}'
 --solved part 2 in plain js
 
+myWeights = M.fromList [
+    (("Alice", "A"), 0),
+    (("David", "A"), 0),
+    (("Carol", "A"), 0),
+    (("Bob", "A"), 0),
+    (("Eric", "A"), 0),
+    (("George", "A"), 0),
+    (("Frank", "A"), 0),
+    (("Mallory", "A"), 0),
+    (("A", "Alice"), 0),
+    (("A", "David"), 0),
+    (("A", "Carol"), 0),
+    (("A", "Bob"), 0),
+    (("A", "Eric"), 0),
+    (("A", "George"), 0),
+    (("A", "Frank"), 0),
+    (("A", "Mallory"), 0)
+    ]
+
 dinnerParse = mappify . foldr (\(l, r) (ls, rs)-> (l:ls, r:rs)) ([], []) . map (f . words) . lines
     where dropDot = takeWhile (\c -> c /= '.')
           f [a,_,"gain",b,_,_,_,_,_,_,d] = (((a,dropDot d), read b:: Int), ((dropDot d, a), read b:: Int))
-          f [a,_,"lose",b,_,_,_,_,_,_,d] = (((a,dropDot d), -(read b:: Int)), ((dropDot d, a), (read b:: Int)))
-          mappify (ls, rs) = M.unionWith (+) (M.fromList ls) (M.fromList rs)
+          f [a,_,"lose",b,_,_,_,_,_,_,d] = (((a,dropDot d), -(read b:: Int)), ((dropDot d, a), -(read b:: Int)))
+          mappify (ls, rs) = M.unionWith (+) (M.fromList ls) ( M.union (M.fromList rs) myWeights)
 
 directedWeighted :: String -> IO ()
 directedWeighted file = do 
     ls <- readFile file
     let clean = dinnerParse ls
     print clean
+
+reindeerParse :: String -> [(String, Int, Int, Int)]
+reindeerParse = map (f . words) .  lines 
+    where dropDot = takeWhile (\c -> c /= '.')
+          f [n, _, _, s, _, _, d, _, _, _, _, _, _, r, _] = (n, read s, read d, read r)
+
+toDistance x  (n, speed, durr, rest) = let
+    totalTime = durr + rest
+    cycles = (x `div` totalTime) + 1
+    in (n, cycles * (speed * durr))
+
+reindeerRace :: String -> Int -> IO ()
+reindeerRace file durration = do 
+    ls <- readFile file
+    let clean = reindeerParse ls
+        transform = map (toDistance durration) clean
+    print transform
 
