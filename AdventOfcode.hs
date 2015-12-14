@@ -173,7 +173,7 @@ mst (es, sets) e@(WEdge a b w) = step $ extract sets where
             seta' = if S.member a s then Just s else seta
             setb' = if S.member b s then Just s else setb
             in (ls', seta', setb')
---turns out this was the wrong algorithm... this is the minimum spanning tree
+--turns out this was the wrong algorithm for the problem. should have been ham path not mst
 shortestPath file = do
     contents <- fmap lines (readFile file)
     let parse = p where
@@ -228,15 +228,17 @@ pathLength g = sum . map (weights g)
 cleverRead = M.fromList . concatMap (f . words) . lines
     where f [a,_,b,_,d] = [((a,b), read d),((b,a), read d)]
 
-hamPath' file = do 
-    pathMap <- fmap cleverRead (readFile file)
+hammingPath makeMap file = do
+    pathMap <- fmap makeMap (readFile file)
     let vs = vertices pathMap
         perms = permutations vs
         edges = map getEdges perms
         ws = map (pathLength pathMap) edges
         weightedPaths = zip edges ws
     print $ maximumBy (comparing snd) weightedPaths
-      
+
+travelMap = hammingPath cleverRead
+
 lookNSay ns 0 = ns 
 lookNSay (x:ns) iter = let
     (a, ln, xs) = foldl (\(prev, ln, ls) c-> if(c == prev) then (prev, ln + 1, ls) else (c, 1, prev:(chr (48 +ln)):ls)) (x, 1, []) ns
@@ -273,5 +275,17 @@ makeSantaPw inStr =
 
 --bit of grep and awk
 --grep -E '[0-9]{1,}' 12.in | sed 's/ //g;s/.*://g;s/\,//g;'| awk '{s+=$1} END {print s}'
+--solved part 2 in plain js
 
--- not familiar enough with haskell to handle this. Did it in js
+dinnerParse = mappify . foldr (\(l, r) (ls, rs)-> (l:ls, r:rs)) ([], []) . map (f . words) . lines
+    where dropDot = takeWhile (\c -> c /= '.')
+          f [a,_,"gain",b,_,_,_,_,_,_,d] = (((a,dropDot d), read b:: Int), ((dropDot d, a), read b:: Int))
+          f [a,_,"lose",b,_,_,_,_,_,_,d] = (((a,dropDot d), -(read b:: Int)), ((dropDot d, a), (read b:: Int)))
+          mappify (ls, rs) = M.unionWith (+) (M.fromList ls) (M.fromList rs)
+
+directedWeighted :: String -> IO ()
+directedWeighted file = do 
+    ls <- readFile file
+    let clean = dinnerParse ls
+    print clean
+
