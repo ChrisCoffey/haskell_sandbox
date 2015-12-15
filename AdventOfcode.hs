@@ -315,8 +315,9 @@ reindeerParse = map (f . words) .  lines
 
 toDistance x  (n, speed, durr, rest) = let
     totalTime = durr + rest
-    cycles = (x `div` totalTime) + 1
-    in (n, cycles * (speed * durr))
+    cycles = ((x - durr) `div` totalTime) + 1
+    rem = x - ( cycles * totalTime )
+    in (n, rem + totalTime, durr, rest, cycles * (speed * durr))
 
 reindeerRace :: String -> Int -> IO ()
 reindeerRace file durration = do 
@@ -324,4 +325,34 @@ reindeerRace file durration = do
     let clean = reindeerParse ls
         transform = map (toDistance durration) clean
     print transform
+
+--iterate from 0 -> n-1
+--at each point, apply the score function to my list that applies the list
+--each list is 0-n, with cells filled with either 0 or speed
+-- for the range, accumulate everyone's scores & record the winner in the victory list
+toRacer :: Int -> Int -> Int -> Int -> [Int]
+toRacer x durr speed rest = 
+    take x 
+    . concatMap (\i -> if i == 0 then take durr (repeat speed) else take rest (repeat 0)) 
+    . map (\i -> i `mod` 2) 
+    $ [0..100]
+
+nextStep :: (Int, (String, [Int])) -> (Int, (String, [Int]))
+nextStep (curr, (n, x:xs)) = (curr + x, (n, xs))
+nextStep (curr, (n, [])) = (curr, (n, []))
+
+scoreStep (winners, racers) = let
+    thisStep = map nextStep racers
+    (winner, _) = foldr (\(x, (n, _)) (n', x')-> if x > x' then (n, x) else (n', x')) ("", -1) thisStep
+    in (winner:winners, thisStep)
+
+reindeerGames :: String -> Int -> IO ()
+reindeerGames file x = do
+    ls <- readFile file
+    let clean = reindeerParse ls
+        ready:: [(String, [Int])] = map (\(n, s,d,r)-> (n, toRacer x d s r)) clean
+        (winners, _) = foldl (\a _-> scoreStep a) ([], (map (\ls -> (0, ls)) ready)) [1..2503]
+        steady = map (\ls -> (length ls, head ls)) . group . sort $  winners
+    print steady 
+
 
