@@ -4,7 +4,7 @@ import qualified Data.Map as M
 import qualified Data.Set as S (Set, member, fromList, insert, union) 
 import Data.List.Split (splitOn)
 import Data.List.Utils hiding (contains)
-import Data.List (union, isInfixOf, sort, permutations, minimumBy, maximumBy, nub, group)
+import Data.List (union, isInfixOf, sort, permutations, minimumBy, maximumBy, nub, group, sortBy, groupBy)
 import Data.Ord (comparing)
 import Data.Hash.MD5
 import Data.Matrix
@@ -335,7 +335,7 @@ toRacer x durr speed rest =
     take x 
     . concatMap (\i -> if i == 0 then take durr (repeat speed) else take rest (repeat 0)) 
     . map (\i -> i `mod` 2) 
-    $ [0..100]
+    $ [0..1000]
 
 nextStep :: (Int, (String, [Int])) -> (Int, (String, [Int]))
 nextStep (curr, (n, x:xs)) = (curr + x, (n, xs))
@@ -343,8 +343,8 @@ nextStep (curr, (n, [])) = (curr, (n, []))
 
 scoreStep (winners, racers) = let
     thisStep = map nextStep racers
-    (winner, _) = foldr (\(x, (n, _)) (n', x')-> if x > x' then (n, x) else (n', x')) ("", -1) thisStep
-    in (winner:winners, thisStep)
+    ws = map (\(_, (n, _))-> n) . head . groupBy (\l r-> (fst l) == (fst r)) . reverse . sort $ thisStep
+    in (ws ++ winners, thisStep)
 
 reindeerGames :: String -> Int -> IO ()
 reindeerGames file x = do
