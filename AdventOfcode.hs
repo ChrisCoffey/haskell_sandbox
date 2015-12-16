@@ -355,4 +355,45 @@ reindeerGames file x = do
         steady = map (\ls -> (length ls, head ls)) . group . sort $  winners
     print steady 
 
+data CookieIngredient = CookieIngredient {
+    name :: String,
+    capacity :: Int,
+    durability :: Int,
+    flavor :: Int,
+    texture :: Int,
+    calories :: Int } deriving (Show, Eq)
+
+parseCookie = f where
+    scrub = takeWhile (\c -> c /= ',')
+    f [n,_, c, _, d, _, f, _, t, _, ca] = CookieIngredient {
+        name = n,
+        capacity = read (scrub c),
+        durability = read (scrub d),
+        flavor = read (scrub f),
+        texture = read (scrub t),
+        calories = read (scrub ca) }
+
+--this could be so much faster if memoized up front
+cookieScore ingredients = f where
+    cap n = capacity  (ingredients !! n)
+    dur n = durability (ingredients !! n)
+    flv n = flavor  (ingredients !! n)
+    txt n = texture  (ingredients !! n)
+    cal n = calories (ingredients !! n)
+    f (a,b,c,d) = let
+        c' = max ((a * (cap 0)) + (b * (cap 1)) + (c * (cap 2)) + (d * (cap 3))) 0
+        d' = max ((a * (dur 0)) + (b * (dur 1)) + (c * (dur 2)) + (d * (dur 3))) 0
+        f' = max ((a * (flv 0)) + (b * (flv 1)) + (c * (flv 2)) + (d * (flv 3))) 0
+        t' = max ((a * (txt 0)) + (b * (txt 1)) + (c * (txt 2)) + (d * (txt 3))) 0
+        ca' = max ((a * (cal 0)) + (b * (cal 1)) + (c * (cal 2)) + (d * (cal 3))) 0
+        in if ca' == 500 then (c', d', f', t', (a,b,c,d)) else (0,0,0,0, (a,b,c,d))
+
+bestCookie file = do 
+    ls <- readFile file
+    let cookies = map parseCookie . map words $ lines ls
+        choices = [(a,b,c,d)| a<-[0..100], b<-[0..100-a], c<- [0..100-(a+b)], d<- [0..100-(a+b+c)]]
+        best = maximum .  map (\e@(a,b,c,d, _)-> (a*b*c*d, e)) . map (cookieScore cookies) $ choices
+    print best
+
+
 
