@@ -391,7 +391,7 @@ cookieScore ingredients = f where
 bestCookie file = do 
     ls <- readFile file
     let cookies = map parseCookie . map words $ lines ls
-        choices = [(a,b,c,d)| a<-[0..100], b<-[0..100-a], c<- [0..100-(a+b)], d<- [0..100-(a+b+c)]]
+        choices = [(a,b,c,d)| a<-[0..100], b<-[0..100-a], c<- [0..100-(a+b)], d<- [0..100-(a+b+c)], a+b+c+d == 100]
         best = maximum .  map (\e@(a,b,c,d, _)-> (a*b*c*d, e)) . map (cookieScore cookies) $ choices
     print best
 
