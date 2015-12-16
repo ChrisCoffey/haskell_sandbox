@@ -388,10 +388,13 @@ cookieScore ingredients = f where
         ca' = max ((a * (cal 0)) + (b * (cal 1)) + (c * (cal 2)) + (d * (cal 3))) 0
         in if ca' == 500 then (c', d', f', t', (a,b,c,d)) else (0,0,0,0, (a,b,c,d))
 
+-- can solve this with a gradient search through the space
+-- by starting with 25 of each, then subtracting from one and adding to each of the others
+-- before sticking with the one that made the most difference in total score
 bestCookie file = do 
     ls <- readFile file
     let cookies = map parseCookie . map words $ lines ls
-        choices = [(a,b,c,d)| a<-[0..100], b<-[0..100-a], c<- [0..100-(a+b)], d<- [0..100-(a+b+c)], a+b+c+d == 100]
+        choices = [(a,b,c,100 - (a + b + c))| a<-[0..100], b<-[0..100-a], c<- [0..100-(a+b)]]
         best = maximum .  map (\e@(a,b,c,d, _)-> (a*b*c*d, e)) . map (cookieScore cookies) $ choices
     print best
 
