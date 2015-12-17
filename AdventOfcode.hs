@@ -398,5 +398,33 @@ bestCookie file = do
         best = maximum .  map (\e@(a,b,c,d, _)-> (a*b*c*d, e)) . map (cookieScore cookies) $ choices
     print best
 
+parseAunt :: [String] -> (String, (String, Int), (String, Int), (String, Int))
+parseAunt = f where
+    f [_, n, a, a', b, b', c, c'] = let
+        ai = read (takeWhile (\c-> c /= ',') a')
+        bi = read (takeWhile (\c-> c /= ',') b')
+        ci = read (takeWhile (\c-> c /= ',') c')
+        in (n, (a, ai), (b, bi), (c, ci))
+
+auntie = M.fromList [
+    ("children:", (== 3)), 
+    ("cats:", (> 7)), 
+    ("samoyeds:", (== 2)), 
+    ("pomeranians:", (< 3)), 
+    ("akitas:", (== 0)),
+    ("vizslas:", (== 0)),
+    ("goldfish:", (< 5)),
+    ("trees:", (> 3)),
+    ("cars:", (== 2)),
+    ("perfumes:", ( == 1))]
+
+findMyAunt file = do 
+    ls <- readFile file
+    let aunts = map parseAunt . map words $ lines ls
+        goodAunt = f where
+            lookup = (M.!) auntie
+            f (n, (a, ai), (b, bi), (c, ci)) = (lookup a ai) && (lookup b bi) && (lookup c ci)
+        likely = filter goodAunt aunts
+    print likely
 
 
