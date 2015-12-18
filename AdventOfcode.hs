@@ -427,4 +427,31 @@ findMyAunt file = do
         likely = filter goodAunt aunts
     print likely
 
+eggnogStorage file n = do
+    containers <-  fmap (sort . map (\i-> read i::Int) . lines ) $ readFile file
+    let store = f where
+            f conts amt 
+                | amt == 0 = 1
+                | conts == [] = 0
+                | amt < 0 = 0
+                | otherwise = (f (tail conts) amt) + (f (tail conts) (amt - (head conts)))
+        res = store containers n
+    print res
+
+unOrderedPermute [] = []
+unOrderedPermute (x:xs) = (map (\h -> [x,h]) xs ) ++ (unOrderedPermute xs)
+
+eggnogMinStorage :: String -> Int -> Int -> IO ()
+eggnogMinStorage file n m = do
+    containers <-  fmap (sort . map (\i-> read i::Int) . lines ) $ readFile file
+    let store = f where
+            f conts amt ac
+                | amt == 0 = 1
+                | conts == [] = 0
+                | amt < 0 = 0
+                | ac == 0 = 0
+                | otherwise = (f (tail conts) amt ac) + (f (tail conts) (amt - (head conts)) (ac - 1))
+        res = store containers n m
+    print res
+
 
