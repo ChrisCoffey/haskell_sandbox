@@ -438,9 +438,6 @@ eggnogStorage file n = do
         res = store containers n
     print res
 
-unOrderedPermute [] = []
-unOrderedPermute (x:xs) = (map (\h -> [x,h]) xs ) ++ (unOrderedPermute xs)
-
 eggnogMinStorage :: String -> Int -> Int -> IO ()
 eggnogMinStorage file n m = do
     containers <-  fmap (sort . map (\i-> read i::Int) . lines ) $ readFile file
