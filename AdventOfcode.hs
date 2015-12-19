@@ -451,4 +451,18 @@ eggnogMinStorage file n m = do
         res = store containers n m
     print res
 
-
+animatedLights file g = do 
+    lights <- fmap (map (\l -> map(\c-> if c == '#' then True else False) l) . lines) $ readFile file
+    let dims = length lights
+        onLights = [(x,y)| x <-[0..dims-1], y <- [0..dims-1], (!! y) . (!! x) $ lights]
+        corners = [(0,0), (0, 99), (99, 0), (99,99)]
+        step ls = [head cs | cs <- grouped grid, on cs] where
+            grid = nub $ (ls ++ corners) 
+            validPt (x',y') = x' >= 0 && y' >= 0 && x' < dims && y' < dims
+            grouped = group . sort . concatMap neighbors
+            neighbors (x,y) = filter validPt [(x+x', y+y')| x' <- [-1..1], y'<- [-1..1], (x',y')/= (0,0)] 
+            on [_,_,_] = True
+            on [a, _] = a `elem` grid
+            on _ = False
+        res = nub . (++ corners) . head . reverse . take g $ iterate step onLights
+    print $ length res 
