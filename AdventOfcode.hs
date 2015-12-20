@@ -466,3 +466,21 @@ animatedLights file g = do
             on _ = False
         res = nub . (++ corners) . head . reverse . take g $ iterate step onLights
     print $ length res 
+
+reindeerCode file = do
+    ls <- fmap lines $ readFile file
+    let code = last ls
+        listify = f where
+            f (x@(k, _):xs) = (k, foldr (\(_, v) ac -> v:ac) [] (x:xs))
+        transforms = map listify . groupBy (\(l,_) (r,_)-> l == r) .  sort . map (\[a,_,o]-> (a,o)) . map words $ filter (contains '=') ls
+        mp = M.fromList transforms
+        process = f where
+            f xs [] _ = xs
+            --f xs(l:rest) n = ((++ xs) . map (\s-> (take n code) ++ s++rest) $ (M.!) mp (l:[]) )++ (f xs rest (n+1))
+            f xs (l:r:rest) n
+                | M.member (l:[]) mp = ((++ xs) . map (\s-> (take n code) ++ s++(r:rest)) $ (M.!) mp (l:[]) ) ++ (f xs (r:rest) (n+1))
+                | M.member (l:r:[])  mp = ((++ xs) . map (\s-> (take n code) ++ s++rest) $ (M.!) mp (l:r:[]) ) ++ (f xs rest (n+2))
+                | otherwise = f xs (r:rest) (n +1)
+        res = length . nub $ process [] code 0
+    print res
+    
