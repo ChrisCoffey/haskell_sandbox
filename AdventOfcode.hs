@@ -4,12 +4,13 @@ import qualified Data.Map as M
 import qualified Data.Set as S (Set, member, fromList, insert, union) 
 import Data.List.Split (splitOn)
 import Data.List.Utils hiding (contains)
-import Data.List (union, isInfixOf, sort, permutations, minimumBy, maximumBy, nub, group, sortBy, groupBy)
+import Data.List (union, isInfixOf, sort, permutations, minimumBy, maximumBy, nub, group, sortBy, groupBy, findIndex)
 import Data.Ord (comparing)
 import Data.Hash.MD5
 import Data.Matrix
 import Data.Bits
 import Data.Char
+import Math.NumberTheory.Primes.Factorisation
 
 elevator s = 
    foldr (\c acc -> if (c == '(') then acc + 1 else acc -1) 0 s  
@@ -474,13 +475,35 @@ reindeerCode file = do
             f (x@(k, _):xs) = (k, foldr (\(_, v) ac -> v:ac) [] (x:xs))
         transforms = map listify . groupBy (\(l,_) (r,_)-> l == r) .  sort . map (\[a,_,o]-> (a,o)) . map words $ filter (contains '=') ls
         mp = M.fromList transforms
-        process = f where
+        part1 = f where
             f xs [] _ = xs
-            --f xs(l:rest) n = ((++ xs) . map (\s-> (take n code) ++ s++rest) $ (M.!) mp (l:[]) )++ (f xs rest (n+1))
             f xs (l:r:rest) n
                 | M.member (l:[]) mp = ((++ xs) . map (\s-> (take n code) ++ s++(r:rest)) $ (M.!) mp (l:[]) ) ++ (f xs (r:rest) (n+1))
                 | M.member (l:r:[])  mp = ((++ xs) . map (\s-> (take n code) ++ s++rest) $ (M.!) mp (l:r:[]) ) ++ (f xs rest (n+2))
                 | otherwise = f xs (r:rest) (n +1)
-        res = length . nub $ process [] code 0
-    print res
-    
+--        part2 = g where
+--            tokenized = 
+--            g [] n = n
+--            g (l:r:rest) n = 
+        res1 = length . nub $ part1 [] code 0
+--        res2
+    print res1
+--    print res2
+
+intSqrt = floor . sqrt . fromIntegral
+  
+primes = filter ((== 0) . length . divisors) [1..] where
+    divisors n = [x | x <- [2..(intSqrt n)], n `mod` x == 0]
+
+primeSet = S.fromList $ take 1000 primes 
+
+factors n = let
+    xs = [(x)| x<-[1..(intSqrt n)], n `mod` x == 0] 
+    fs = map (\x -> n `div` x) xs
+    in nub $ xs ++ fs
+
+
+presents n = head . filter (\(i, x)-> x >= n) . zip [1..] . map ( (* 10) . sum . factors) $ [1..]
+
+presents2 = head . filter (\(i,x)-> x >= n) .zip [1..] . map ((*11) . sum . filter (> (n -1) `div` 50 .factors) $ [1..]
+ 
