@@ -503,7 +503,23 @@ factors n = let
     in nub $ xs ++ fs
 
 
-presents n = head . filter (\(i, x)-> x >= n) . zip [1..] . map ( (* 10) . sum . factors) $ [1..]
+--presents n = head . filter (\(i, x)-> x >= n) . zip [1..] . map ( (* 10) . sum . factors) $ [1..]
 
-presents2 = head . filter (\(i,x)-> x >= n) .zip [1..] . map ((*11) . sum . filter (> (n -1) `div` 50 .factors) $ [1..]
- 
+--presents2 = head . filter (\(i,x)-> x >= n) .zip [1..] . map ((*11) . sum . filter (> (n -1) `div` 50 .factors) $ [1..]
+
+
+weapons = [(0,4,8),  (0,5,10), (0,6,25), (0,7,40), (0,8,74)]
+armor = [(1,0,13), (2,0,31), (3,0,53), (4,0,75), (5,0,102), (0,0,0)] 
+rings = [(1,0,20), (2,0,40), (3,0,80), (0,1,25), (0,2,50), (0,3,100)]
+
+rpgStore bh ba bd = let
+    joinItems = f where
+        f l@(a,d,c) r@(a',d',c') = (a+a', d+d', c+c')
+    combos = do
+       w <- weapons
+       a <- armor
+       rs <- [] ++ (map (\x->[x]) rings) ++ (nub . map (sort . take 2) . permutations $ rings) 
+       return (foldl1 joinItems (w:a:rs))
+    fight = f where
+        f (a,d,c) = ((bh-1) `div` (max 1 (d - ba))) <= (99 `div` (max 1 (bd - a)))
+    in filter (not . fight) $ combos
