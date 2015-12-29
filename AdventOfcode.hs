@@ -502,10 +502,10 @@ factors n = let
     fs = map (\x -> n `div` x) xs
     in nub $ xs ++ fs
 
+presents:: Int -> (Int, Int)
+presents n = head . filter (\(i, x)-> x >= n) . zip [1..] . map ( (* 10) . sum . factors) $ [1..]
 
---presents n = head . filter (\(i, x)-> x >= n) . zip [1..] . map ( (* 10) . sum . factors) $ [1..]
-
---presents2 = head . filter (\(i,x)-> x >= n) .zip [1..] . map ((*11) . sum . filter (> (n -1) `div` 50 .factors) $ [1..]
+presents2 n = head . filter (\(i,x)-> x >= n) . zip [1..] . map ((*11) . sum . filter (> (n -1) `div` 50 .factors)) $ [1..]
 
 
 weapons = [(0,4,8),  (0,5,10), (0,6,25), (0,7,40), (0,8,74)]
@@ -523,3 +523,73 @@ rpgStore bh ba bd = let
     fight = f where
         f (a,d,c) = ((bh-1) `div` (max 1 (d - ba))) <= (99 `div` (max 1 (bd - a)))
     in filter (not . fight) $ combos
+
+--need to build the wizard fight system
+
+
+data Machine = Machine { a :: Int, b :: Int } deriving (Show)
+type Instructions = M.Map Int (MachineExec -> MachineExec)
+data MachineExec = MachineExec {machine :: Machine, idx:: Int } deriving (Show)
+
+hlf :: String -> MachineExec -> MachineExec
+hlf "a" (MachineExec (Machine a' b') i) = MachineExec {machine = Machine { a = (a' `div` 2), b = b' }, idx = i +1 }
+hlf "b" (MachineExec m i) = MachineExec {machine = Machine { a = (a m), b = (b m) `div` 2 }, idx = i +1 }
+
+tpl :: String -> MachineExec -> MachineExec
+tpl "a" (MachineExec m i) = MachineExec { machine = Machine { a = (a m) * 3, b = b m }, idx = i +1 }
+tpl "b" (MachineExec m i) = MachineExec {machine = Machine { a = (a m), b = (b m) * 3 }, idx = i +1 }
+
+inc :: String -> MachineExec -> MachineExec
+inc "a" (MachineExec m i) = MachineExec { machine = Machine { a = (a m) + 1, b = b m }, idx = i +1 }
+inc "b" (MachineExec m i) = MachineExec { machine = Machine { a = (a m), b = (b m) + 1 }, idx = i + 1}
+
+jmp :: Int -> MachineExec -> MachineExec
+jmp n (MachineExec m i) = MachineExec { machine = m, idx = i + n }
+
+jie :: Int -> String -> MachineExec -> MachineExec
+jie n "a" (MachineExec m i)
+    | even (a m) = MachineExec {machine = m, idx = i + n}
+    | otherwise = MachineExec {machine = m, idx = i + 1}
+jie n "b" (MachineExec m i)  
+    | even (b m) = MachineExec {machine = m, idx = i + n}
+    | otherwise = MachineExec {machine = m, idx = i + 1}
+
+jio :: Int -> String -> MachineExec -> MachineExec
+jio n "a" (MachineExec m i)
+    | (== 1)  (a m) = MachineExec {machine = m, idx = i + n}
+    | otherwise = MachineExec {machine = m, idx = i + 1}
+jio n "b" (MachineExec m i)  
+    | (== 1) (b m) = MachineExec {machine = m, idx = i + n}
+    | otherwise = MachineExec {machine = m, idx = i + 1}
+
+--need to record the index of the instructions
+--its important that this can be moved around quickly
+parseInst :: String -> (MachineExec -> MachineExec)
+parseInst ln = f $ words ln where
+    f ["inc", reg] = inc reg
+    f ["tpl", reg] = tpl reg
+    f ["hlf", reg] = hlf reg
+    f ["jmp", '+':n] = jmp (read n :: Int)
+    f ["jmp", n] = jmp (read n :: Int)
+    f ["jie", reg:',':[], '+':n ] = jie (read n:: Int) (reg:[])
+    f ["jie", reg:',':[], n ] = jie (read n:: Int) (reg:[])
+    f ["jio", reg:',':[], '+':n ] = jio (read n:: Int) (reg:[])
+    f ["jio", reg:',':[], n ] = jio (read n:: Int) (reg:[])
+
+runTheMachine file = do
+    lns <- fmap lines $ readFile file
+    let insts = M.fromList . zip [1..] . map parseInst $ lns
+        start = MachineExec{ machine = Machine {a = 0, b = 0 }, idx = 1 }
+        start' = MachineExec{ machine = Machine {a = 1, b = 0 }, idx = 1 }
+        step = f where
+            f me@(MachineExec m i) = (M.! i) insts $ me
+        res = head . filter (\(MachineExec m i)-> i > 49) . iterate step $ start'
+    print res
+
+quantumWeights file = do
+    lns <- fmap lines $ readFile file
+    let weights = map (\i-> read i :: Int) lns
+        sectionWeight = (`div` 3) . sum $ weights
+    print sectionWeight
+
+
