@@ -583,13 +583,35 @@ runTheMachine file = do
         start' = MachineExec{ machine = Machine {a = 1, b = 0 }, idx = 1 }
         step = f where
             f me@(MachineExec m i) = (M.! i) insts $ me
-        res = head . filter (\(MachineExec m i)-> i > 49) . iterate step $ start'
+        res = head . filter (\(MachineExec m i)-> i > 49) . iterate step $ start
+        res' = head . filter (\(MachineExec m i)-> i > 49) . iterate step $ start'
     print res
+    print res'
+
+addToHeadL :: a -> [[a]] -> [[a]]
+addToHeadL a (as:rest) = (a:as):rest
+addToHeadL a [] = [[a]]
+
+combinations :: [Int] -> Int -> [[Int]] 
+combinations xs n =  f xs n [] where
+    f rest amt elems
+        | amt == 0 = elems
+        | rest == [] = [] 
+        | amt < 0 = [] 
+        | otherwise = (f (tail rest) amt elems) ++ (f (tail rest) (amt - (head rest)) (addToHeadL (head rest) elems))
 
 quantumWeights file = do
     lns <- fmap lines $ readFile file
     let weights = map (\i-> read i :: Int) lns
-        sectionWeight = (`div` 3) . sum $ weights
-    print sectionWeight
+        sectionWeight = (`div` 4) . sum $ weights
+        qe = product
+        cs = combinations (reverse weights) sectionWeight
+        possible = sortBy (comparing length) . filter (\l-> (length l) <= 6) $ cs
+    print $ sectionWeight
+    print $ minimum (map product possible)
 
-
+weatherCode x y = let
+   maxRow = x + y
+   idx = (sum [1..(maxRow)]) + y
+   f = (\n-> (n * 252533) `mod` 33554393) 
+   in head . drop (idx) $ iterate f 20151125
