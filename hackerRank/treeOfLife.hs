@@ -1,24 +1,27 @@
 import Data.Bits                            (testBit)
+import Data.Text                            (splitOn, pack, strip, unpack, singleton)
 
-data BTree a = ETree | Node (BTree a) a (BTree a) deriving (Show)
+data BTree a = Leaf a | Node (BTree a) a (BTree a) deriving (Show)
 type CellState = [Bool] -> Bool
 type CaRule a = CellState -> BTree a
 
+root:: BTree a -> BTree a
+root l@(Leaf v)= l
+root (Node l v r) = Leaf v
 
-root ETree = ETree
-root (Node l v r) = v
-left ETree = ETree
+left:: BTree a -> BTree a
 left (Node l v r) = l
-right ETree = ETree
+
+right :: BTree a -> BTree a
 right (Node l v r) = r
 
 parsePath :: String -> BTree a -> BTree a
-parsePath str
-    | str == "[]" = root
-    | str == ('[':rest) = parsePath rest
-    | str == ('<':rest) = (parsePath rest) . left 
-    | str == ('>':rest) = (parsePath rest) . right
-    | str == (']':[]) = root
+parsePath str@(c:rest)
+    | str == "[]"       = root
+    | c == '['          = parsePath rest
+    | c == '<'          = (parsePath rest) . left 
+    | c == '>'          = (parsePath rest) . right
+    | str == (']':[])    = root
 
 parseRule :: Int -> CellState
 parseRule n = let
@@ -42,10 +45,23 @@ parseRule n = let
         s [False, False, False, False]  = bits !! 0
    in stateMap 
 
-parseTree :: String -> BTree a
+parseTree :: String -> BTree Bool
 parseTree str = f str where
-    takeChunk s = 
-    f ('(':rest) = 
+    takeBlocks n (c:rest)
+        | c == '(' && n == 0 = takeBlocks (n + 1) rest 
+        | c == '(' && n == 1 = '|':c:(takeBlocks (n+1) rest )
+        | c == '(' && n > 0 =  c:(takeBlocks (n + 1) rest )
+        | c == ')' && n == 2 = c:'|':(takeBlocks (n-1) rest )
+        | c == ')' && n > 1 = c:(takeBlocks (n - 1) rest )
+        | c == ')' && n == 1 = []
+        | otherwise = c:(takeBlocks n rest )
+    f "." = Leaf False
+    f "X" = Leaf True
+    f x = let
+     grps = map (unpack . strip) . splitOn (singleton '|' ). pack . takeBlocks 0 $ str
+     --need to properly unpack here too
+     val = if v == "X" then True else False
+     in Node (f l) val  (f r)
     
 
 main = do
