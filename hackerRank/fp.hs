@@ -1,5 +1,8 @@
 import Control.Monad
 
+main = do
+    print "Im main"
+
 data YN = YES | NO deriving (Show)
 
 zig :: [a] -> [(a,a)]
@@ -20,7 +23,7 @@ substringCheck =  do
     getContents >>= mapM_ print . map (\b-> if b then YES else NO) . map isSubstring . zig . drop 1 . lines
 
 --binary search tree preorder traversal
-data BinaryTree a = EmptyTree | TreeNode BinaryTree a BinaryTree deriving (Show)
+data BinaryTree a = EmptyTree | TreeNode (BinaryTree a) a (BinaryTree a) deriving (Show)
 
 btAdd :: (Ord a) => a -> BinaryTree a -> BinaryTree a
 btAdd a EmptyTree = TreeNode EmptyTree a EmptyTree
@@ -42,5 +45,23 @@ preorderCheck = do
     mapM_ print $  map(\b-> if b then YES else NO) . map (\ls -> ls == (preorderTraversal . bTfromList $ ls)) $ input
 
 
+-- fibonacci numbers 
+fibs = 0:1:(fr 0 1) where
+    fr n m = (n+m):(fr m (n+m))
 
+nthFibMod n = 
+   (`mod` 100000007) . head . drop (n) $ fibs
 
+fibCheck :: IO ()
+fibCheck = do
+    getContents >>= mapM_ print . map (nthFibMod . read) . drop 1 . lines
+
+-- pentagonal numbers
+pents = map (p) [0..] where
+    p n =  (3 * (n ^ 2) - n) `div` 2
+
+nthPent n = pents !! (n)
+
+pentCheck :: IO ()
+pentCheck = do
+    getContents >>= mapM_ print . map (nthPent . read) . drop 1 . lines
