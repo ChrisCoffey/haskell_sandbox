@@ -57,11 +57,11 @@ fibCheck = do
     getContents >>= mapM_ print . map (nthFibMod . read) . drop 1 . lines
 
 -- pentagonal numbers
-pents = map (p) [0..] where
-    p n =  (3 * (n ^ 2) - n) `div` 2
+generalizedPent n = (3 * (n ^ 2) - n) `div` 2
 
-nthPent n = pents !! (n)
+pents = map (p) [0..] where
+    p n = generalizedPent n
 
 pentCheck :: IO ()
 pentCheck = do
-    getContents >>= mapM_ print . map (nthPent . read) . drop 1 . lines
+    getContents >>= mapM_ print . map (generalizedPent. read) . drop 1 . lines
