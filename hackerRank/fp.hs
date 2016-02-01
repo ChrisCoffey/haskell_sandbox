@@ -1,4 +1,6 @@
 import Control.Monad
+import qualified Data.Map               as M
+import qualified Data.List              as L
 
 main = do
     print "Im main"
@@ -65,3 +67,27 @@ pents = map (p) [0..] where
 pentCheck :: IO ()
 pentCheck = do
     getContents >>= mapM_ print . map (generalizedPent. read) . drop 1 . lines
+
+-- misisng numbers
+aggLists :: [Int] -> [Int] -> [Int]
+aggLists l r = let
+    mappify = foldl (\acc x-> M.insertWith (+) x 1 acc) (M.fromList[(0,0)])
+    ma = mappify l
+    mb = mappify r
+    diffs = M.filterWithKey (\b _ -> (M.lookup b ma) /= (M.lookup b mb )) mb
+    in L.sort . map fst . M.toList $ diffs
+
+sndNFourth (a:b:c:d:[])= b:d:[]
+    
+
+missingCheck :: IO ()
+missingCheck = do
+    cs <-  getContents
+    let lns = lines cs
+        (h:t:[]) = sndNFourth lns
+        hs = map (\x -> read x ::Int) . words $ h
+        ts = map (\x -> read x ::Int) . words $ t
+        agg = aggLists hs ts
+        -- There must be a better way...
+        fmt = reverse . tail . reverse .foldr (\n str-> (show n)++(' ':str)) "" $ agg
+    putStr fmt
