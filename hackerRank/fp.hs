@@ -88,6 +88,34 @@ missingCheck = do
         hs = map (\x -> read x ::Int) . words $ h
         ts = map (\x -> read x ::Int) . words $ t
         agg = aggLists hs ts
-        -- There must be a better way...
         fmt = reverse . tail . reverse .foldr (\n str-> (show n)++(' ':str)) "" $ agg
     putStr fmt
+
+-- common divisors
+divisors :: Int -> [Int]
+divisors n = 
+    foldr (\(l,r) a-> l:r:a ) [] [ (n `div` x, x) | x <- [1.. fromIntegral (toInteger. floor . sqrt . fromIntegral $ n) :: Int], (n `mod` x) == 0 ]
+
+pairOverlap :: [Int] -> [Int]
+pairOverlap (h:t:[]) = L.nub . L.intersect (divisors h) $ (divisors t)
+
+sharedDivisors = do
+    getContents >>= mapM_ print . map (length . pairOverlap . map (\x -> read x :: Int) . words) . drop 1 . lines
+
+-- different ways Of Lemurs
+
+facts = 0:(map fact [1..1000])
+
+fact 1 = 1
+fact n = n * (fact (n-1))
+
+combos n k = 
+    (facts !! n) `div` ((facts !! k) * (facts !! (n - k)))
+
+stringToInts :: String -> [Int]
+stringToInts s = map (\x-> read x :: Int) . words $ s
+
+teamLemur = do
+    getContents >>= mapM_ print . map ( (`mod` 100000007) . (\(h:t:[])-> combos h t) . stringToInts)  . drop 1 . lines
+
+
