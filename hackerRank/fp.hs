@@ -118,4 +118,31 @@ stringToInts s = map (\x-> read x :: Int) . words $ s
 teamLemur = do
     getContents >>= mapM_ print . map ( (`mod` 100000007) . (\(h:t:[])-> combos h t) . stringToInts)  . drop 1 . lines
 
+-- Rabbit LCM
+--This method is correct but really inefficient for certain inputs
+lcmSeq :: [Int] -> Int
+lcmSeq (x:xs) = lcm x where
+    isMult y = (== 0) . (y `mod`)
+    areAllMults a (y:ys)   
+        | isMult a y && ys == [] = True
+        | isMult a y             = areAllMults a ys
+        | otherwise            = False
+    lcm s = if areAllMults s xs then s else lcm (s+x)
 
+-- this uses the builtin lcm function & is much much faster
+fastLcmSeq :: [Int] -> Int
+fastLcmSeq (x:xs)= foldl (\a f-> f a) x $ map lcm xs
+
+checkRabbits = do
+    getContents >>= print . fastLcmSeq . map (\x -> read x:: Int) . words . head . drop 1 . lines
+
+--huge gcd
+--somewhat cheap but really fast
+pairGcd :: (Integral a) =>  [[a]] -> a
+pairGcd (f:b:[]) = let
+    pf = product f
+    pb = product b
+    in gcd pf pb
+
+findGcd = do
+    getContents >>= print . (`mod` 1000000007) . pairGcd . (\(_:a:_:b:[]) -> a:b:[]) . map (map (\x -> read x:: Int) . words) . lines
