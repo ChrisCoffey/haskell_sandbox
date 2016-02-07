@@ -65,9 +65,9 @@ decAddr mem = f (cursor mem) where
 inc x = x + 1
 
 interpret :: BfState  -> BfState
-interpret s@(BfState m p i o ops) 
-    | otherwise     = run '*' s 
+interpret s = run s 
     where
+        runCmd :: Char -> BfState -> BfState
         runCmd c (BfState mem prog i o ops)
             | c == ','                  = let
                                             (h:rest) = i
@@ -81,25 +81,21 @@ interpret s@(BfState m p i o ops)
             | c == '>'                  = BfState (right mem) (right prog) i o (inc ops)
             | c == '<'                  = BfState (left mem) (right prog) i o (inc ops)
             | c == '[' 
-              && (cursor mem) == 0      = run ']' (BfState mem prog i o ops)
+              && (cursor mem) == 0      = case rightWhile ( /= ']') prog of 
+                                                Nothing      -> s
+                                                Just (d,p)   -> (BfState mem p i o (d + ops))
+
             | c == '['                  = BfState mem (right prog) i o (inc ops)
             | c == ']'
-              && (cursor mem) /= 0      = run '[' (BfState mem prog i o ops)
+              && (cursor mem) /= 0      = case leftWhile ( /= '[') prog of 
+                                                Nothing      -> s
+                                                Just (d,p)   -> (BfState mem p i o (d + ops))
             | c == ']'                  = BfState mem (right prog) i o (inc ops)
 
-        run searchChar s'@(BfState mem' prog' i' o' ops')
-            | ops' >= 1000              = BfState m p i ((if (length o) >0 then o ++ ['\n'] else o) ++ "PROCESS TIME OUT. KILLED!!!") 10000 -- out of time
-            | rEmpty prog'              = s'
-            | searchChar == ']'         = if (cursor prog') == searchChar
-                                          then run '*' s'
-                                          else let
-                                            res = rightWhile (\c-> c /= searchChar) prog'
-                                            in case res of Nothing      -> s'
-                                                           Just (d,p)   -> run '*' (BfState mem' p i' o' (d + ops'))
-            | searchChar == '['         = if (cursor prog') == searchChar
-                                          then run '*' s'
-                                          else run searchChar  (BfState mem' (left prog') i' o' (inc ops'))
-            | otherwise                 =  run '*' $ runCmd (cursor prog') s
+        run bf@(BfState mem' prog' i' o' ops')
+            | ops' >= 100000            = BfState mem' prog' i' ((if (length o') >0 then o' ++ ['\n'] else o') ++ "PROCESS TIME OUT. KILLED!!!") 10000 -- out of time
+            | rEmpty prog'              = bf
+            | otherwise                 =  run (runCmd (cursor prog') bf)
 
 cleanLine ln =
     foldr (\x acc -> if S.member x tokens then x:acc else acc) "" ln
