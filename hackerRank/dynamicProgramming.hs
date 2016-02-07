@@ -9,8 +9,4 @@ fibModified = do
     (a:b:n:[]) <- liftM (map (\x-> read x :: Integer) . words) getContents
     print $ computeNth a b n
 
-maximumSubArray :: IO ()
-maximumSubArray = do
-    print 7
-
 main = fibModified
