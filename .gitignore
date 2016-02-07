@@ -3,3 +3,5 @@
 *.orig
 /adventData
 .DS_Store
+*.o
+*.bf

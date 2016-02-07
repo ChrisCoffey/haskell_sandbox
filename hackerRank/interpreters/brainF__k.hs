@@ -33,12 +33,16 @@ leftWhile p zp = f 0 zp
     where 
         f dist zp'
             | p (cursor zp') = f (dist + 1) (left zp')
-            | rEmpty zp'     = Nothing
-            | otherwise     = Just (dist, zp')
+            | lEmpty zp'     = Nothing
+            | otherwise      = Just (dist, zp')
 
 rEmpty :: Zipper a -> Bool
 rEmpty (Zip l []) = True
 rEmpty z          = False
+
+lEmpty :: Zipper a -> Bool
+lEmpty (Zip [] l) = True
+lEmpty z          = False  
 
 replace :: a -> Zipper a -> Zipper a
 replace a (Zip l (r:rs)) = Zip l (a:rs)
@@ -82,20 +86,20 @@ interpret s = run s
             | c == '<'                  = BfState (left mem) (right prog) i o (inc ops)
             | c == '[' 
               && (cursor mem) == 0      = case rightWhile ( /= ']') prog of 
-                                                Nothing      -> s
+                                                Nothing      -> BfState mem prog i "Failed Going Right" 100001
                                                 Just (d,p)   -> (BfState mem p i o (d + ops))
 
             | c == '['                  = BfState mem (right prog) i o (inc ops)
             | c == ']'
               && (cursor mem) /= 0      = case leftWhile ( /= '[') prog of 
-                                                Nothing      -> s
+                                                Nothing      -> BfState mem prog i "Failed Going Left " 100001
                                                 Just (d,p)   -> (BfState mem p i o (d + ops))
             | c == ']'                  = BfState mem (right prog) i o (inc ops)
 
         run bf@(BfState mem' prog' i' o' ops')
             | ops' >= 100000            = BfState mem' prog' i' ((if (length o') >0 then o' ++ ['\n'] else o') ++ "PROCESS TIME OUT. KILLED!!!") 10000 -- out of time
             | rEmpty prog'              = bf
-            | otherwise                 =  run (runCmd (cursor prog') bf)
+            | otherwise                 = run (runCmd (cursor prog') bf)
 
 cleanLine ln =
     foldr (\x acc -> if S.member x tokens then x:acc else acc) "" ln
