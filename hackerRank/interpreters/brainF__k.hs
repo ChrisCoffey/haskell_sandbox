@@ -20,6 +20,26 @@ left :: Zipper a -> Zipper a
 left z@(Zip [] rs) = z
 left z@(Zip l r) = Zip (take ((length l) -1) l) ((last l):r)
 
+rightWhile :: (a -> Bool) ->  Zipper a -> Maybe (Int, Zipper a)
+rightWhile p zp = f 0 zp
+    where
+        f dist zp'
+            | p (cursor zp') = f (dist + 1) (right zp')
+            | rEmpty zp'     = Nothing
+            | otherwise     = Just (dist, zp')
+
+leftWhile :: (a -> Bool) -> Zipper a -> Maybe (Int, Zipper a)
+leftWhile p zp = f 0 zp
+    where 
+        f dist zp'
+            | p (cursor zp') = f (dist + 1) (left zp')
+            | rEmpty zp'     = Nothing
+            | otherwise     = Just (dist, zp')
+
+rEmpty :: Zipper a -> Bool
+rEmpty (Zip l []) = True
+rEmpty z          = False
+
 replace :: a -> Zipper a -> Zipper a
 replace a (Zip l (r:rs)) = Zip l (a:rs)
 
@@ -42,38 +62,46 @@ decAddr mem = f (cursor mem) where
     f 0 = replace 255 mem
     f x = replace (x - 1) mem
 
-interpret :: BfState  -> BfState
-interpret (BfState m p i o 100000) = BfState m p i "PROCESS TIME OUT. KILLED!!!" 10000 -- out of time
-interpret s@(BfState _ (Zip l [ ]) _ _ _) = s -- program termination
-interpret s@(BfState mem prog i o ops) = run '*' s where
-    runCmd c 
-        | c == ',' = let
-            (h:rest) = i
-            b = ord h
-            in BfState (replace b mem) (right prog) rest o (ops + 1)
-        | c == '.' = let
-            b = chr (cursor mem)
-            in BfState mem (right prog) i (o++[b]) (ops + 1)
-        | c == '+' = BfState (incAddr mem) (right prog) i o (ops + 1)
-        | c == '-' = BfState (decAddr mem) (right prog) i o (ops + 1)
-        | c == '>' = BfState (right mem) (right prog) i o (ops + 1)
-        | c == '<' = BfState (right mem) (right prog) i o (ops + 1)
-        | c == '[' = if (cursor mem) == 0
-                     then run ']' (BfState mem (right prog) i o (ops +1))
-                     else BfState mem (right prog) i o (ops + 1)
-        | c == ']' = if (cursor mem) /= 0
-                     then run '[' (BfState mem (left prog) i o (ops +1))
-                     else BfState mem (left prog) i o (ops + 1)
-    run searchChar state
-        | searchChar == ']' = if (cursor prog) == ']'
-                           then interpret (BfState mem (right prog) i o (ops +1))
-                           else run searchChar  (BfState mem (right prog) i o (ops +1))
-        | searchChar == '[' = if (cursor prog) == '['
-                           then interpret (BfState mem (right prog) i o (ops +1))
-                           else run searchChar  (BfState mem (left prog) i o (ops +1))
-        | otherwise      =  interpret $ runCmd (cursor prog)
+inc x = x + 1
 
-stripComments ln = 
+interpret :: BfState  -> BfState
+interpret s@(BfState m p i o ops) 
+    | otherwise     = run '*' s 
+    where
+        runCmd c (BfState mem prog i o ops)
+            | c == ','                  = let
+                                            (h:rest) = i
+                                            b = ord h
+                                            in BfState (replace b mem) (right prog) rest o (inc ops)
+            | c == '.'                  = let
+                                            b = chr (cursor mem)
+                                            in BfState mem (right prog) i (o++[b])  (inc ops)
+            | c == '+'                  = BfState (incAddr mem) (right prog) i o (inc ops)
+            | c == '-'                  = BfState (decAddr mem) (right prog) i o (inc ops)
+            | c == '>'                  = BfState (right mem) (right prog) i o (inc ops)
+            | c == '<'                  = BfState (left mem) (right prog) i o (inc ops)
+            | c == '[' 
+              && (cursor mem) == 0      = run ']' (BfState mem prog i o ops)
+            | c == '['                  = BfState mem (right prog) i o (inc ops)
+            | c == ']'
+              && (cursor mem) /= 0      = run '[' (BfState mem prog i o ops)
+            | c == ']'                  = BfState mem (right prog) i o (inc ops)
+
+        run searchChar s'@(BfState mem' prog' i' o' ops')
+            | ops' >= 1000              = BfState m p i ((if (length o) >0 then o ++ ['\n'] else o) ++ "PROCESS TIME OUT. KILLED!!!") 10000 -- out of time
+            | rEmpty prog'              = s'
+            | searchChar == ']'         = if (cursor prog') == searchChar
+                                          then run '*' s'
+                                          else let
+                                            res = rightWhile (\c-> c /= searchChar) prog'
+                                            in case res of Nothing      -> s'
+                                                           Just (d,p)   -> run '*' (BfState mem' p i' o' (d + ops'))
+            | searchChar == '['         = if (cursor prog') == searchChar
+                                          then run '*' s'
+                                          else run searchChar  (BfState mem' (left prog') i' o' (inc ops'))
+            | otherwise                 =  run '*' $ runCmd (cursor prog') s
+
+cleanLine ln =
     foldr (\x acc -> if S.member x tokens then x:acc else acc) "" ln
 
 main = do
@@ -81,8 +109,7 @@ main = do
     let (h:t) = cs
         (a:b:[]) = map (\x -> read x :: Int) . words $ h
         input = take a . head $ t
-        prog = L.concatMap stripComments . tail $ t
+        prog = L.concatMap cleanLine . tail $ t
         initialState = BfState (fromList (repeat 0)) (fromList prog) input "" 0
         (BfState _ _ _ o _) = interpret initialState
     putStr o
-    
