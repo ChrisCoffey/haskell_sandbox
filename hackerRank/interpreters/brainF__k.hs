@@ -88,7 +88,6 @@ interpret s = run s
               && (cursor mem) == 0      = case rightWhile ( /= ']') prog of 
                                                 Nothing      -> BfState mem prog i "Failed Going Right" 100001
                                                 Just (d,p)   -> (BfState mem p i o (d + ops))
-
             | c == '['                  = BfState mem (right prog) i o (inc ops)
             | c == ']'
               && (cursor mem) /= 0      = case leftWhile ( /= '[') prog of 
@@ -111,5 +110,6 @@ main = do
         input = take a . head $ t
         prog = L.concatMap cleanLine . tail $ t
         initialState = BfState (fromList (repeat 0)) (fromList prog) input "" 0
-        (BfState _ _ _ o _) = interpret initialState
+        (BfState (Zip lm rm) (Zip lp rp) _ o c) = interpret initialState
+    print c
     putStr o
