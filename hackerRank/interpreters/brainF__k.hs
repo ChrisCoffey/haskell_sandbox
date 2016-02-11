@@ -1,5 +1,6 @@
 import qualified Data.Set                   as S
 import qualified Data.List                  as L
+import Debug.Trace
 import Data.Functor
 import Control.Monad
 import Data.Char
@@ -76,24 +77,24 @@ interpret s = run s
             | c == ','                  = let
                                             (h:rest) = i
                                             b = ord h
-                                            in BfState (replace b mem) (right prog) rest o (inc ops)
+                                            in trace ("in") $ BfState (replace b mem) (right prog) rest o (inc ops)
             | c == '.'                  = let
-                                            b = chr (cursor mem)
+                                            b = trace ("out") (chr (cursor mem))
                                             in BfState mem (right prog) i (o++[b])  (inc ops)
-            | c == '+'                  = BfState (incAddr mem) (right prog) i o (inc ops)
-            | c == '-'                  = BfState (decAddr mem) (right prog) i o (inc ops)
-            | c == '>'                  = BfState (right mem) (right prog) i o (inc ops)
-            | c == '<'                  = BfState (left mem) (right prog) i o (inc ops)
+            | c == '+'                  = trace ("inc")  $ BfState (incAddr mem) (right prog) i o (inc ops)
+            | c == '-'                  = trace ("dec") $ BfState (decAddr mem) (right prog) i o (inc ops)
+            | c == '>'                  = trace ("right") $ BfState (right mem) (right prog) i o (inc ops)
+            | c == '<'                  = trace ("left") $ BfState (left mem) (right prog) i o (inc ops)
             | c == '[' 
-              && (cursor mem) == 0      = case rightWhile ( /= ']') prog of 
+              && (cursor mem) == 0      = trace ("loop jump end") $ case rightWhile ( /= ']') prog of 
                                                 Nothing      -> BfState mem prog i "Failed Going Right" 100001
                                                 Just (d,p)   -> (BfState mem p i o (d + ops))
-            | c == '['                  = BfState mem (right prog) i o (inc ops)
+            | c == '['                  = trace ("begin loop") . traceShow ((\(Zip lm rm)-> (lm, take 10 rm)) mem) $ BfState mem (right prog) i o (inc ops)
             | c == ']'
-              && (cursor mem) /= 0      = case leftWhile ( /= '[') prog of 
+              && (cursor mem) /= 0      = trace ("loop jump start") $ case leftWhile ( /= '[') prog of 
                                                 Nothing      -> BfState mem prog i "Failed Going Left " 100001
                                                 Just (d,p)   -> (BfState mem p i o (d + ops))
-            | c == ']'                  = BfState mem (right prog) i o (inc ops)
+            | c == ']'                  = trace ("end loop") . traceShow ((\(Zip lm rm)-> (lm, take 10 rm)) mem) $ BfState mem (right prog) i o (inc ops)
 
         run bf@(BfState mem' prog' i' o' ops')
             | ops' >= 100000            = BfState mem' prog' i' ((if (length o') >0 then o' ++ ['\n'] else o') ++ "PROCESS TIME OUT. KILLED!!!") 10000 -- out of time
