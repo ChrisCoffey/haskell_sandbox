@@ -67,6 +67,19 @@ decAddr mem = f (cursor mem) where
     f 0 = replace 255 mem
     f x = replace (x - 1) mem
 
+loopJump :: Bool -> Program -> (Int, Program)
+loopJump goRight prog = walk goRight 1 0 prog where
+    c = cursor prog
+    walk _ 0 steps p = (steps, p)
+    walk True n steps p 
+        | c == '['  = walk goRight (n + 1) (steps + 1) (right prog)
+        | c == ']'  = walk goRight (n - 1) (steps + 1) (right prog)
+        | otherwise = walk goRight n (steps + 1) (right prog)
+    walk False n steps p 
+        | c == '['  = walk goRight (n - 1) (steps + 1) (left prog)
+        | c == ']'  = walk goRight (n - 1) (steps + 1) (left prog)
+        | otherwise = walk goRight n (steps + 1) (left prog)
+ 
 inc x = x + 1
 
 interpret :: BfState  -> BfState
@@ -86,14 +99,12 @@ interpret s = run s
             | c == '>'                  = trace ("right") $ BfState (right mem) (right prog) i o (inc ops)
             | c == '<'                  = trace ("left") $ BfState (left mem) (right prog) i o (inc ops)
             | c == '[' 
-              && (cursor mem) == 0      = trace ("loop jump end") $ case rightWhile ( /= ']') prog of 
-                                                Nothing      -> BfState mem prog i "Failed Going Right" 100001
-                                                Just (d,p)   -> (BfState mem p i o (d + ops))
+              && (cursor mem) == 0      = trace ("loop jump end") $ let (d,p) = loopJump True prog
+                                                                    in (BfState mem p i o (d + ops))
             | c == '['                  = trace ("begin loop") . traceShow ((\(Zip lm rm)-> (lm, take 10 rm)) mem) $ BfState mem (right prog) i o (inc ops)
             | c == ']'
-              && (cursor mem) /= 0      = trace ("loop jump start") $ case leftWhile ( /= '[') prog of 
-                                                Nothing      -> BfState mem prog i "Failed Going Left " 100001
-                                                Just (d,p)   -> (BfState mem p i o (d + ops))
+              && (cursor mem) /= 0      = trace ("loop jump start") $ let (d,p) = loopJump False prog 
+                                                                      in (BfState mem p i o (d + ops))
             | c == ']'                  = trace ("end loop") . traceShow ((\(Zip lm rm)-> (lm, take 10 rm)) mem) $ BfState mem (right prog) i o (inc ops)
 
         run bf@(BfState mem' prog' i' o' ops')
