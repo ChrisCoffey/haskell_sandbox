@@ -69,7 +69,7 @@ decAddr mem = f (cursor mem) where
 
 loopJump :: Bool -> Program -> (Int, Program)
 loopJump goRight prog = walk (cursor prog) 1 0 prog where
-    walk  _ 0 steps p = (steps, p)
+    walk  _ 0 steps p = (steps - 1, p)
     walk c n steps p 
         | goRight && c == '['       = walk (cursor $ right p) (n + 1) (steps + 1) (right p)
         | goRight && c == ']'       = walk (cursor $ right p) (n - 1) (steps + 1) (right p)
@@ -88,25 +88,25 @@ interpret s = run s
             | c == ','                  = let
                                             (h:rest) = i
                                             b = ord h
-                                            in trace ("in") $ BfState (replace b mem) (right prog) rest o (inc ops)
+                                            in BfState (replace b mem) (right prog) rest o (inc ops)
             | c == '.'                  = let
-                                            b = trace ("out") (chr (cursor mem))
+                                            b = chr (cursor mem)
                                             in BfState mem (right prog) i (o++[b])  (inc ops)
-            | c == '+'                  = trace ("inc")  $ BfState (incAddr mem) (right prog) i o (inc ops)
-            | c == '-'                  = trace ("dec") $ BfState (decAddr mem) (right prog) i o (inc ops)
-            | c == '>'                  = trace ("right") $ BfState (right mem) (right prog) i o (inc ops)
-            | c == '<'                  = trace ("left") $ BfState (left mem) (right prog) i o (inc ops)
+            | c == '+'                  = BfState (incAddr mem) (right prog) i o (inc ops)
+            | c == '-'                  = BfState (decAddr mem) (right prog) i o (inc ops)
+            | c == '>'                  = BfState (right mem) (right prog) i o (inc ops)
+            | c == '<'                  = BfState (left mem) (right prog) i o (inc ops)
             | c == '[' 
-              && (cursor mem) == 0      = trace ("loop jump end") $ let (d,p) = loopJump True (right prog)
-                                                                    in (BfState mem p i o (d + ops))
-            | c == '['                  = trace ("begin loop") . traceShow ((\(Zip lm rm)-> (lm, take 10 rm)) mem) $ BfState mem (right prog) i o (inc ops)
+              && (cursor mem) == 0      = let (d,p) = loopJump True (right prog)
+                                              in BfState mem (left p) i o (inc ops)
+            | c == '['                  = BfState mem (right prog) i o (inc ops)
             | c == ']'
-              && (cursor mem) /= 0      = trace ("loop jump start") $ let (d,p) = loopJump False (left prog)
-                                                                      in (BfState mem p i o (d + ops))
-            | c == ']'                  = trace ("end loop") . traceShow ((\(Zip lm rm)-> (lm, take 10 rm)) mem) $ BfState mem (right prog) i o (inc ops)
+              && (cursor mem) /= 0      = let (d,p) = loopJump False (left prog)
+                                              in BfState mem (right p) i o (inc ops)
+            | c == ']'                  = BfState mem (right prog) i o (inc ops)
 
         run bf@(BfState mem' prog' i' o' ops')
-            | ops' >= 100000            = BfState mem' prog' i' ((if (length o') >0 then o' ++ ['\n'] else o') ++ "PROCESS TIME OUT. KILLED!!!") 10000 -- out of time
+            | ops' > 100000            = BfState mem' prog' i' ((if (length o') >0 then o' ++ ['\n'] else o') ++ "PROCESS TIME OUT. KILLED!!!") 10000 -- out of time
             | rEmpty prog'              = bf
             | otherwise                 = run (runCmd (cursor prog') bf)
 
@@ -121,5 +121,4 @@ main = do
         prog = L.concatMap cleanLine . tail $ t
         initialState = BfState (fromList (repeat 0)) (fromList prog) input "" 0
         (BfState (Zip lm rm) (Zip lp rp) _ o c) = interpret initialState
-    print c
     putStr o
