@@ -1,5 +1,11 @@
+import Control.Applicative
+import Control.Monad
 import Data.Bits                            (testBit)
-import Data.Text                            (splitOn, pack, strip, unpack, singleton)
+import Data.Char
+import Data.Functor
+
+
+newtype Parser a = Parser {parse :: String -> [(a,String)]}
 
 data BTree a = Leaf a | Node (BTree a) a (BTree a) deriving (Show)
 type CellState = [Bool] -> Bool
@@ -46,23 +52,33 @@ parseRule n = let
    in stateMap 
 
 parseTree :: String -> BTree Bool
-parseTree str = f str where
-    takeBlocks n (c:rest)
-        | c == '(' && n == 0 = takeBlocks (n + 1) rest 
-        | c == '(' && n == 1 = '|':c:(takeBlocks (n+1) rest )
-        | c == '(' && n > 0 =  c:(takeBlocks (n + 1) rest )
-        | c == ')' && n == 2 = c:'|':(takeBlocks (n-1) rest )
-        | c == ')' && n > 1 = c:(takeBlocks (n - 1) rest )
-        | c == ')' && n == 1 = []
-        | otherwise = c:(takeBlocks n rest )
-    f "." = Leaf False
-    f "X" = Leaf True
-    f x = let
-     grps = map (unpack . strip) . splitOn (singleton '|' ). pack . takeBlocks 0 $ str
-     --need to properly unpack here too
-     val = if v == "X" then True else False
-     in Node (f l) val  (f r)
+parseTree str = parse str where
+    midpoint 1 (')':xs)     = xs
+    midpoint n ('(':xs)     = midpoint (n+1) xs 
+    midpoint n (')':xs)     = midpoint (n-1) xs
+    midpoint n (x:xs)       = midpoint n xs
+
+    takeSubtree ('(':xs) 0  = takeSubtree xs 1
+    takeSubtree (')':xs) 1  = []
+    takeSubtree ('(':xs) n  = '(':(takeSubtree xs (n + 1))
+    takeSubtree (')':xs) n  = ')':(takeSubtree xs (n - 1))
+    takeSubtree (x:xs) n    = x:(takeSubtree xs n)
     
+    parse :: String -> BTree Bool
+    parse (' ':xs) = parse xs
+    parse ('X':xs) = Leaf True
+    parse ('.':xs) = Leaf False
+    parse(')':xs) = 
+    parse seg@('(':cs) =  let 
+        l = (parse $ takeSubtree seg 0)
+        (Leaf v) = parse $ midpoint 0 seg
+        r = parse $ takeSubtree (drop 3 . midpoint 0 $ seg) 0
+        in Node l v r
 
 main = do
-    print "fail"
+    ls <- lines <$> getContents
+    let 
+        rule = ls !! 0
+        tree = ls !! 1
+        cases = drop 3 ls
+    print tree
