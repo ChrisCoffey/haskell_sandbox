@@ -1,6 +1,7 @@
 module While where
 
 import Control.Monad
+import qualified Data.Map                                       as M
 import System.IO
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Expr
@@ -111,9 +112,9 @@ ifStatement = do
     reserved "if"
     cond <- bExpression
     reserved "then"
-    yes <- statement
+    yes <- braces statement
     reserved "else"
-    no  <- statement 
+    no  <- braces statement 
     return $ If cond yes no
 
 whileStatement = do
@@ -144,5 +145,30 @@ manyStatements = do
 whileParser :: Parser Statement
 whileParser = wSpace >> statement
 
+--Interpreter
+type PState = M.Map VariableName Integer
+initialState :: PState
+initialState = M.fromList []
 
+interpretBExp :: BExpr -> PState -> Bool
+interpretBExp (BBinary And l r) p = (interpretBExp l p) && (interpretBExp r p)
+interpretBExp (BBinary Or l r) p  = (interpretBExp l p) || (interpretBExp r p)
+interpretBExp (RBinary Gt l r) p  = (interpretAExp l p) > (interpretAExp r p)
+interpretBExp (RBinary Lt l r) p  = (interpretAExp l p) < (interpretAExp r p)
+interpretBExp (BConst v) p = v
+
+interpretAExp :: AExpr -> PState -> Integer
+interpretAExp (ABinary Add l r) p       = (interpretAExp l p) + (interpretAExp r p)
+interpretAExp (ABinary Subtract l r) p  = (interpretAExp l p) - (interpretAExp r p)
+interpretAExp (ABinary Multiply l r) p  = (interpretAExp l p) * (interpretAExp r p)
+interpretAExp (ABinary Divide l r) p    = (interpretAExp l p) `div` (interpretAExp r p)
+interpretAExp (Variable name) p         = p M.! name
+interpretAExp (NConst i) _              = i 
+
+interpret :: Statement -> PState -> PState
+interpret (Many []) p           = p
+interpret (Many (s:ls)) p         = interpret (Many ls) $ interpret s p
+interpret (Assign name a) p     = M.insert name (interpretAExp a p) p
+interpret (If b yes no) p       = if (interpretBExp b p) then (interpret yes p) else (interpret no p)
+interpret w@(While cond body) p = if (interpretBExp cond p) then (interpret w $ interpret body p) else p
 
