@@ -88,6 +88,6 @@ zip' (a:as) (b:bs) = (a,b):zip' as bs
 quickSort :: (Ord a) => [a] -> [a]
 quickSort [] = []
 quickSort (x:xs) = 
-  let smallerSorted = quicksort [a | a <- xs, a <= x]
-      greaterSorted = quicksort [a | a <- xs, a > x]
+  let smallerSorted = quickSort [a | a <- xs, a <= x]
+      greaterSorted = quickSort [a | a <- xs, a > x]
   in smallerSorted ++ [x] ++ greaterSorted  
