@@ -4,6 +4,7 @@ import qualified Info.EarlyProblems as EPI
 
 import Data.Char (digitToInt)
 import Data.List (intersect, find, maximumBy)
+import Data.Monoid ((<>))
 import Data.Ord (comparing)
 import qualified Data.Map.Strict as M
 
@@ -111,6 +112,25 @@ centralBinomialCoefficient n = factorial (2 * n) `div` (nFac * nFac)
 
 centralBinomialCoefficients :: [Integer]
 centralBinomialCoefficients = map centralBinomialCoefficient [1..1000]
+
+data PyramidBlock = Block {maxPath :: Integer }
+type PyramidLayer = [PyramidBlock]
+
+maximumPathPyramid ::[[Integer]] -> Integer
+maximumPathPyramid ls = let
+    rls     = reverse ls
+    base    = head rls
+    ls'     = reverse . tail $ rls
+    baseLayer = map Block base
+    in maxPath . head $ foldr makeLayer baseLayer ls'
+    where 
+        makeLayer ::  [Integer] -> PyramidLayer -> PyramidLayer 
+        makeLayer raw prevLayer = let
+            ridx = zip raw [0..]
+            in foldr go [] ridx
+            where f (Block l) (Block r) x = Block (x + (max l r))
+                  go (x, i) layer = f (prevLayer !! i) (prevLayer !! (i + 1)) x : layer 
+
 --
 -- Problems
 --
@@ -169,4 +189,31 @@ problem15 = centralBinomialCoefficient 20
 problem16 :: Int
 problem16 = sum . map digitToInt . show $ 2 ^ 1000
 
+problem17 :: Int
+problem17 = sum . map (length . stringify) $ [1..1000]
+    where stringify n 
+            | n == 0                = ""
+            | n == 10               = "ten"
+            | n == 11               = "eleven"
+            | n == 12               = "twelve"
+            | n == 13               = "thirteen"
+            | n == 14               = "fourteen"
+            | n == 15               = "fifteen"
+            | n == 16               = "sixteen"
+            | n == 17               = "seventeen"
+            | n == 18               = "eighteen"
+            | n == 19               = "nineteen"
+            | n < 10                = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine"] !! (n -1)
+            | n < 100 && n >= 20    = ["twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"] !! ((n `div` 10) - 2) <> stringify (n `mod` 10)
+            | n == 1000             = "one"<>"thousand"
+            | otherwise             = "hundred" <> (if n `mod` 100 == 0 then "" else  "and") <> stringify (n `mod` 100) <> stringify (n `div` 100)
+
+problem18 :: Integer
+problem18 = maximumPathPyramid EPI.problem18
+
+problem19 :: Integer
+problem19 = undefined
+
+problem20 :: Int
+problem20 = sum . map digitToInt . show $ factorial 100
 
