@@ -211,8 +211,19 @@ problem17 = sum . map (length . stringify) $ [1..1000]
 problem18 :: Integer
 problem18 = maximumPathPyramid EPI.problem18
 
-problem19 :: Integer
-problem19 = undefined
+--problem19 :: Int
+problem19 = 
+    length . filter isMatch . zip weeks . concat . concat . map (\y -> map (month y) [1..12]) $ [0..100]
+    where
+    isMatch (1,1) = True
+    isMatch _     = False
+    weeks = cycle [2,3,4,5,6,7,1]
+    month y m 
+        | m `elem` [4,6,9,11]      = [1..30]
+        | m == 2 && isLeapYear y   = [1..29]
+        | m == 2                   = [1..28]
+        | otherwise                = [1..31]
+    isLeapYear y = if y `mod` 100 == 0 then y `mod` 400 == 0 else y `mod` 4 == 0
 
 problem20 :: Int
 problem20 = sum . map digitToInt . show $ factorial 100
