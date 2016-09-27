@@ -8,6 +8,9 @@ import Data.Monoid ((<>))
 import Data.Ord (comparing)
 import qualified Data.Map.Strict as M
 
+possibleFactors :: Integer -> [Integer]
+possibleFactors x = [2..(fromIntegral . floor . sqrt $ fromInteger x)]
+
 divisibleBy :: Integer -> Integer -> Bool
 divisibleBy x y = y `mod` x == 0
 
@@ -131,6 +134,19 @@ maximumPathPyramid ls = let
             where f (Block l) (Block r) x = Block (x + (max l r))
                   go (x, i) layer = f (prevLayer !! i) (prevLayer !! (i + 1)) x : layer 
 
+properDivisors :: Integer -> [Integer]
+properDivisors n =  1:actualFactors
+    where actualFactors = foldl (\a x-> x: (n `div` x):a) []  $ filter (`divisibleBy` n) $ possibleFactors n
+
+areAmicable :: Integer -> Integer -> Bool
+areAmicable x y = (sum $ properDivisors x) == (sum $ properDivisors y)
+
+split :: [a] -> a -> [[a]]
+split [] _      = []
+split (x:xs) a 
+    | a == x    = split xs a
+    | otherwise = x : (split xs a)
+
 --
 -- Problems
 --
@@ -211,9 +227,10 @@ problem17 = sum . map (length . stringify) $ [1..1000]
 problem18 :: Integer
 problem18 = maximumPathPyramid EPI.problem18
 
---problem19 :: Int
+--concatMap is effectively flatMap from scala wrt List a
+problem19 :: Int
 problem19 = 
-    length . filter isMatch . zip weeks . concat . concat . map (\y -> map (month y) [1..12]) $ [0..100]
+    length . filter isMatch . drop 365 . zip weeks . concat . concatMap (\y -> map (month y) [1..12]) $ [1900..2000]
     where
     isMatch (1,1) = True
     isMatch _     = False
@@ -228,3 +245,12 @@ problem19 =
 problem20 :: Int
 problem20 = sum . map digitToInt . show $ factorial 100
 
+problem21 :: Integer
+problem21 = sum . filter (\x-> f x <= 10000 && (f x /= x) && x == (factorSums M.! f x)) $ [1..10000]
+    where factorSums = foldl (\m n-> M.insert n (f n) m) M.empty [1..10000]
+          f = sum . properDivisors
+
+problem22 :: Integer
+problem22 = do
+    readFile "src/Info/names22.txt"
+    
