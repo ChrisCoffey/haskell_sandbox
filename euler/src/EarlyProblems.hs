@@ -2,11 +2,12 @@ module EarlyProblems where
 
 import qualified Info.EarlyProblems as EPI
 
-import Data.Char (digitToInt)
-import Data.List (intersect, find, maximumBy)
+import Data.Char (digitToInt, ord, isAlpha)
+import Data.List (intersect, find, maximumBy, sort, (\\), tails, nub)
 import Data.Monoid ((<>))
 import Data.Ord (comparing)
 import qualified Data.Map.Strict as M
+import qualified Data.Set        as S
 
 possibleFactors :: Integer -> [Integer]
 possibleFactors x = [2..(fromIntegral . floor . sqrt $ fromInteger x)]
@@ -136,17 +137,29 @@ maximumPathPyramid ls = let
 
 properDivisors :: Integer -> [Integer]
 properDivisors n =  1:actualFactors
-    where actualFactors = foldl (\a x-> x: (n `div` x):a) []  $ filter (`divisibleBy` n) $ possibleFactors n
+    where actualFactors = nub . foldl (\a x-> x: (n `div` x):a) []  $ filter (`divisibleBy` n) $ possibleFactors n
 
 areAmicable :: Integer -> Integer -> Bool
 areAmicable x y = (sum $ properDivisors x) == (sum $ properDivisors y)
 
-split :: [a] -> a -> [[a]]
-split [] _      = []
-split (x:xs) a 
-    | a == x    = split xs a
-    | otherwise = x : (split xs a)
+split :: Eq a => a -> [a] -> [[a]]
+split a = f . foldr step ([],[]) 
+    where 
+    f (as, acc) = as:acc
+    step x (as, acc)
+        |x == a         = ([], as:acc)
+        | otherwise     = (x:as, acc)
 
+stripOut :: Eq a => a -> [a] -> [a]
+stripOut a = foldr step []
+    where
+    step x acc 
+        | x == a        = acc
+        | otherwise     = x:acc
+
+abundantNumbers :: [Integer]
+abundantNumbers = filter isAbundant [1..]
+    where isAbundant n = (sum $ properDivisors n) > n
 --
 -- Problems
 --
@@ -250,7 +263,20 @@ problem21 = sum . filter (\x-> f x <= 10000 && (f x /= x) && x == (factorSums M.
     where factorSums = foldl (\m n-> M.insert n (f n) m) M.empty [1..10000]
           f = sum . properDivisors
 
-problem22 :: Integer
+problem22 :: IO Integer
 problem22 = do
-    readFile "src/Info/names22.txt"
-    
+    names <-  split ',' . stripOut '"' <$> readFile "src/Info/names22.txt"
+    let sNames = filter isAlpha <$> sort names
+    let aScored = toInteger .  sum . map ((\x -> x - 64) . ord) <$> sNames
+    let finalScore = zipWith (*) aScored [1..]
+    pure $ sum finalScore
+  
+problem23 :: Integer
+problem23 = let
+    as = takeWhile (< 28123) abundantNumbers
+    aSet = S.fromList as
+    in sum . filter (\n -> valid n as aSet) $ [1..28123]
+    where
+    valid n xs aS = not . any (\x-> S.member (n - x) aS) . filter (< n) $ xs
+
+
