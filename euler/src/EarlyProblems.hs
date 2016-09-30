@@ -279,4 +279,9 @@ problem23 = let
     where
     valid n xs aS = not . any (\x-> S.member (n - x) aS) . filter (< n) $ xs
 
+problem24 :: String
+problem24 = undefined
 
+problem25 :: Integer
+problem25 = fst . head . dropWhile ( (< 3) . digits . snd) $ zip [1..] fibonacciS
+    where digits = length . show
