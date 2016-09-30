@@ -3,7 +3,7 @@ module EarlyProblems where
 import qualified Info.EarlyProblems as EPI
 
 import Data.Char (digitToInt, ord, isAlpha)
-import Data.List (intersect, find, maximumBy, sort, (\\), tails, nub)
+import Data.List (intersect, find, maximumBy, permutations, sort, (\\), tails, nub)
 import Data.Monoid ((<>))
 import Data.Ord (comparing)
 import qualified Data.Map.Strict as M
@@ -279,9 +279,12 @@ problem23 = let
     where
     valid n xs aS = not . any (\x-> S.member (n - x) aS) . filter (< n) $ xs
 
-problem24 :: String
-problem24 = undefined
+problem24 :: [Int]
+problem24 = head . drop 999999 . sort $ permutations [0..9]
 
 problem25 :: Integer
 problem25 = fst . head . dropWhile ( (< 3) . digits . snd) $ zip [1..] fibonacciS
     where digits = length . show
+
+problem26 :: Integer
+problem26 = undefined
