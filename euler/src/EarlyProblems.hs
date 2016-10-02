@@ -3,7 +3,8 @@ module EarlyProblems where
 import qualified Info.EarlyProblems as EPI
 
 import Data.Char (digitToInt, ord, isAlpha)
-import Data.List (intersect, find, maximumBy, permutations, sort, (\\), tails, nub)
+import Data.Function (on)
+import Data.List (intersect, find, maximumBy, permutations, sort, (\\), tails, nub, sortBy)
 import Data.Monoid ((<>))
 import Data.Ord (comparing)
 import qualified Data.Map.Strict as M
@@ -22,7 +23,9 @@ fibonacciS :: [Integer]
 fibonacciS = 0 : 1 : zipWith (+) fibonacciS (tail fibonacciS)
 
 isPrime :: Integer -> Bool
-isPrime n  = not (any (`divisibleBy` n) possibleFactors)
+isPrime n   
+    | n <= 0    = False
+    | otherwise = not (any (`divisibleBy` n) possibleFactors)
     where possibleFactors = [2..(fromIntegral . floor . sqrt $ fromInteger n)]
 
 --naive approach
@@ -160,6 +163,8 @@ stripOut a = foldr step []
 abundantNumbers :: [Integer]
 abundantNumbers = filter isAbundant [1..]
     where isAbundant n = (sum $ properDivisors n) > n
+
+
 --
 -- Problems
 --
@@ -288,3 +293,10 @@ problem25 = fst . head . dropWhile ( (< 3) . digits . snd) $ zip [1..] fibonacci
 
 problem26 :: Integer
 problem26 = undefined
+
+--problem27 :: Int
+problem27 = maximumBy (compare `on` (length . uncurry quadPrimes)) coefs 
+    where coefs = [(a,b)| a <- [-999..999], b <- filter isPrime [0..999]]
+          f a b n =  (n^2) + (a * n) + b
+          quadPrimes :: Integer -> Integer -> [Integer]
+          quadPrimes a b = takeWhile isPrime (f a b <$> [0..])
