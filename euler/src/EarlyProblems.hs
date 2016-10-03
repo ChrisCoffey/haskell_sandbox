@@ -164,6 +164,11 @@ abundantNumbers :: [Integer]
 abundantNumbers = filter isAbundant [1..]
     where isAbundant n = (sum $ properDivisors n) > n
 
+reciprocalCycle :: Integer -> Integer
+reciprocalCycle n =  head [x | x <- [1..], (10^x -1) `mod` n == 0 ]
+
+distinctPowers :: Integer -> Integer -> [Integer]
+distinctPowers a b = nub [x^y| x <- [2..a], y <- [2..b]]
 
 --
 -- Problems
@@ -291,12 +296,24 @@ problem25 :: Integer
 problem25 = fst . head . dropWhile ( (< 3) . digits . snd) $ zip [1..] fibonacciS
     where digits = length . show
 
+--result is the largest prime 'p' < 1k such that the cycle length = 'p'-1
 problem26 :: Integer
-problem26 = undefined
+problem26 =  head . filter (\n -> reciprocalCycle n == n - 1 ) . reverse . takeWhile (< 1000) $ primes
 
---problem27 :: Int
+problem27 :: (Integer, Integer)
 problem27 = maximumBy (compare `on` (length . uncurry quadPrimes)) coefs 
     where coefs = [(a,b)| a <- [-999..999], b <- filter isPrime [0..999]]
           f a b n =  (n^2) + (a * n) + b
           quadPrimes :: Integer -> Integer -> [Integer]
           quadPrimes a b = takeWhile isPrime (f a b <$> [0..])
+
+problem28 :: Integer 
+problem28 = sum $ spriralDiagonals 500
+    where
+    spriralDiagonals n = foldl f [1] [1..n]
+        where f (x:xs) depth = let 
+                y = depth * 2
+                in  (4*y) + x : (3*y)+ x : (2*y) + x: y + x:x:xs
+
+problem29 :: Int
+problem29 = length $ distinctPowers 100 100
