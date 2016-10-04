@@ -170,6 +170,23 @@ reciprocalCycle n =  head [x | x <- [1..], (10^x -1) `mod` n == 0 ]
 distinctPowers :: Integer -> Integer -> [Integer]
 distinctPowers a b = nub [x^y| x <- [2..a], y <- [2..b]]
 
+digits :: Int -> [Int]
+digits = fmap digitToInt . show
+
+nthPowerSum :: Int -> [Int] -> Int
+nthPowerSum n xs = sum $ (^n) <$> xs
+
+nthPowerSumFast :: M.Map Int Int -> [Int] -> Int
+nthPowerSumFast m xs = sum $ (m M.!) <$> xs
+
+combinations :: [Integer] -> Integer -> Integer 
+combinations xs n
+    | n == 0    = 1
+    | null xs   = 0
+    | n < 0     = 0
+    | otherwise = (combinations (tail xs) n) + (combinations (tail xs) (n- (head xs)))
+
+
 --
 -- Problems
 --
@@ -317,3 +334,12 @@ problem28 = sum $ spriralDiagonals 500
 
 problem29 :: Int
 problem29 = length $ distinctPowers 100 100
+
+problem30 :: Int
+problem30 = sum $ filter (\n -> (\xs -> nthPowerSumFast m xs == n) $ digits n) [2..limit] 
+    where m = M.fromList . zip [0..] . fmap (^5) $ [0..9]
+          limit = 6 * (9^5)
+
+problem31 :: Integer
+problem31 = combinations [1,2,5,10,20,50,100,200] 200 
+
