@@ -179,13 +179,12 @@ nthPowerSum n xs = sum $ (^n) <$> xs
 nthPowerSumFast :: M.Map Int Int -> [Int] -> Int
 nthPowerSumFast m xs = sum $ (m M.!) <$> xs
 
-combinations :: [Integer] -> Integer -> Integer 
-combinations xs n
-    | n == 0    = 1
-    | null xs   = 0
-    | n < 0     = 0
-    | otherwise = (combinations (tail xs) n) + (combinations (tail xs) (n- (head xs)))
-
+combinations :: [Int] -> Int -> [[Int]]
+combinations _ 0        = [[]]
+combinations [] _       = []
+combinations (x:xs) n   
+    | x <= n            = (x:) <$> (combinations (x:xs) (n - x)) ++  (combinations (xs) n)
+    | otherwise         = combinations (xs) n
 
 --
 -- Problems
@@ -340,6 +339,5 @@ problem30 = sum $ filter (\n -> (\xs -> nthPowerSumFast m xs == n) $ digits n) [
     where m = M.fromList . zip [0..] . fmap (^5) $ [0..9]
           limit = 6 * (9^5)
 
-problem31 :: Integer
-problem31 = combinations [1,2,5,10,20,50,100,200] 200 
-
+problem31 :: Int 
+problem31 = length $ combinations [1,2,5,10,20,50,100,200] 200 
