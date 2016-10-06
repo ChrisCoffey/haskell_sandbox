@@ -4,7 +4,7 @@ import qualified Info.EarlyProblems as EPI
 
 import Data.Char (digitToInt, ord, isAlpha)
 import Data.Function (on)
-import Data.List (intersect, find, maximumBy, permutations, sort, (\\), tails, nub, sortBy)
+import Data.List (intersect, find, maximumBy, permutations, sort, (\\), tails, nub, sortBy, nubBy)
 import Data.Monoid ((<>))
 import Data.Ord (comparing)
 import qualified Data.Map.Strict as M
@@ -186,6 +186,16 @@ combinations (x:xs) n
     | x <= n            = (x:) <$> (combinations (x:xs) (n - x)) ++  (combinations (xs) n)
     | otherwise         = combinations (xs) n
 
+overlappingDigits :: Eq b => (a -> [b]) -> a -> a -> Bool
+overlappingDigits f l r = (f l \\ f r) /= (f l )
+
+toInts :: [Int] -> Int -> (Int, Int)
+toInts xs n = (a, b)
+    where 
+    a = numify $ take n xs
+    b = numify $ drop n xs
+    numify = fst . foldr (\x (y, t)-> (y+(x*(10^t)), t+1)) (0,0)
+
 --
 -- Problems
 --
@@ -341,3 +351,13 @@ problem30 = sum $ filter (\n -> (\xs -> nthPowerSumFast m xs == n) $ digits n) [
 
 problem31 :: Int 
 problem31 = length $ combinations [1,2,5,10,20,50,100,200] 200 
+
+problem32 :: Int
+problem32 = permSum 2 (ps 5) + permSum 2 (ps 4) + permSum 1 (ps 4) + permSum 1 (ps 5)
+    where 
+    permSum n xs = sum . fmap (\(_,_,x)-> x) . nubBy sameProduct . filter pandigitalProd $ prods . flip toInts n <$> xs
+    sameProduct (_, _, a) (_, _, b) = a == b
+    ps n = nub $ take n <$> permutations [1..9]
+    prods (a,b) = (a,b, a*b)
+    xs = [1..9] 
+    pandigitalProd (a,b,c) = (== xs) . sort $ concatMap (fmap digitToInt . show) [a,b,c]
