@@ -7,6 +7,7 @@ import Data.Function (on)
 import Data.List (intersect, find, maximumBy, permutations, sort, (\\), tails, nub, sortBy, nubBy)
 import Data.Monoid ((<>))
 import Data.Ord (comparing)
+import Data.Ratio (Rational, (%))
 import qualified Data.Map.Strict as M
 import qualified Data.Set        as S
 
@@ -173,6 +174,9 @@ distinctPowers a b = nub [x^y| x <- [2..a], y <- [2..b]]
 digits :: Int -> [Int]
 digits = fmap digitToInt . show
 
+iDigits :: Integer -> [Integer]
+iDigits = fmap (toInteger . digitToInt) . show
+
 nthPowerSum :: Int -> [Int] -> Int
 nthPowerSum n xs = sum $ (^n) <$> xs
 
@@ -194,7 +198,18 @@ toInts xs n = (a, b)
     where 
     a = numify $ take n xs
     b = numify $ drop n xs
-    numify = fst . foldr (\x (y, t)-> (y+(x*(10^t)), t+1)) (0,0)
+
+numify :: Num a => [a] -> a
+numify = fst . foldr (\x (y, t)-> (y+(x*(10^t)), t+1)) (0,0)
+
+--curiousFractions :: [Rational]
+curiousFractions = [n % d | n <- [1..99], d <- [99,98..n], curious n d]
+    where 
+    cancel :: Integer -> Integer -> Integer
+    cancel n d = let 
+        n' = toInteger . numify $ (iDigits n \\ iDigits d)
+        in if n' >= 1 then n' else 100000
+    curious n d = (cancel n d) % (cancel d n) == n % d && cancel n d < n
 
 --
 -- Problems
