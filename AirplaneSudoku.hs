@@ -1,39 +1,28 @@
 module AirplaneSudoku where
 
-import Data.List (any)
-
-type Row = [Int]
-type Box = [Row]
-newtype Puzzle = Puzzle [Row]
-    deriving (Show, Eq)
-
-solve :: Puzzle -> Puzzle
-solve (Puzzle p) = undefined
---Need to branch the search for each possible valid value at each cell
---If all values fail, terminate that branch
---All branches should fail except for one, which is the solution
-
-isSolution Puzzle -> Bool
-isSolution (Puzzle p) = all solvedRow p
-    where solvedRow = notElem (-1)
-
-rotateR :: [Row]-> [Row]
-rotateR = f 
-    where 
-    f [] = []
-    f ([]:xs) = []
-    f xs = (head <$> xs):(f (tail <$> xs))
+import Data.List (any, (\\))
+import qualified Data.Map.Lazy as M
 
 
-canPlace :: Int -> Int -> Int -> Puzzle -> Bool
-canPlace n x y (Puzzle p) = checkRow p x && checkRow (rotateR p) y && checkBox
-    where 
-    checkRow z = notElem n . (z !!)
-    checkBox = foldl (\b r -> f r) False box
-        where 
-        f = notElem n
-        xc = (take 3 . drop (3 * (x `mod` 3))) <$> p-- Broke down and went with 9 x 9. Easy to generalize
-        box = take 3 . drop (3 * (y `mod` 3)) $ p
-        
-        
+data Cell = Cell {
+    x:: Int,
+    y:: Int,
+    constraints:: [Int],
+    val:: Maybe Int
+} deriving (Show)
 
+instance Eq Cell where
+    equals
+
+row :: Cell -> [Cell] -> [Cell]
+row (Cell rowNum _ _ _)= filter ((== rowNum) . x) 
+
+column :: Cell -> [Cell] -> [Cell]
+column (Cell _ colNum _ _) = filter ((== colNum) . y) 
+
+sector :: Cell -> [Cell] -> [Cell]
+sector c = filter ((== sectorNum c) . sectorNum)
+    where sectorNum (Cell x y _ _) = (x `mod` 3, y `mod` 3)
+
+rowConstraints :: Cell -> [Cell] -> [Int]
+rowConstraints c = fmap (\c) . row c 
