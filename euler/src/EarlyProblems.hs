@@ -202,14 +202,21 @@ toInts xs n = (a, b)
 numify :: Num a => [a] -> a
 numify = fst . foldr (\x (y, t)-> (y+(x*(10^t)), t+1)) (0,0)
 
---curiousFractions :: [Rational]
+curiousFractions :: [Rational]
 curiousFractions = [n % d | n <- [1..99], d <- [99,98..n], curious n d]
     where 
     cancel :: Integer -> Integer -> Integer
     cancel n d = let 
         n' = toInteger . numify $ (iDigits n \\ iDigits d)
         in if n' >= 1 then n' else 100000
-    curious n d = (cancel n d) % (cancel d n) == n % d && cancel n d < n
+    curious n d
+        | n `mod` 10 == 0 && d `mod` 10 == 0 = False
+        | otherwise = (cancel n d) % (cancel d n) == n % d && cancel n d < n
+
+curiousNumbers :: [Integer]
+curiousNumbers =  [n | n <- [3..(factorial 9)], curious n]
+    where 
+    curious n = n == ( sum . map factorial $ iDigits n)
 
 --
 -- Problems
@@ -376,3 +383,9 @@ problem32 = permSum 2 (ps 5) + permSum 2 (ps 4) + permSum 1 (ps 4) + permSum 1 (
     prods (a,b) = (a,b, a*b)
     xs = [1..9] 
     pandigitalProd (a,b,c) = (== xs) . sort $ concatMap (fmap digitToInt . show) [a,b,c]
+
+problem33 :: Rational
+problem33 = product curiousFractions
+
+problem34 :: Integer
+problem34 = sum curiousNumbers
