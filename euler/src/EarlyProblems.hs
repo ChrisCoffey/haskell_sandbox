@@ -2,6 +2,7 @@ module EarlyProblems where
 
 import qualified Info.EarlyProblems as EPI
 
+import Data.Bits (testBit)
 import Data.Char (digitToInt, ord, isAlpha)
 import Data.Function (on)
 import Data.List (intersect, find, maximumBy, permutations, sort, (\\), tails, nub, sortBy, nubBy)
@@ -31,8 +32,28 @@ isPrime n
 
 --naive approach
 -- A sieve will be much more efficient
+slowPrimes :: [Integer]
+slowPrimes = 2 : filter isPrime [3,5..]
+
+--Walk a pair of sorted lists & efficiently subtract the sencond from the first
+minus :: Ord a => [a] -> [a] -> [a]
+minus (x:xs) (y:ys) = 
+    case compare x y of
+        LT -> x: minus xs (y:ys)
+        GT -> minus (x:xs) ys
+        EQ -> minus xs ys
+minus xs _ = xs --Covers the empty list case b/c it has already passed the pattern above
+
+union :: Ord a => [a] -> [a] -> [a]
+union (x:xs) (y:ys) = 
+    case compare x y of
+        LT -> x: union xs (y:ys)
+        GT -> y: union (x:xs) ys
+        EQ -> x: union xs ys
+union xs _ = xs
+
 primes :: [Integer]
-primes = filter isPrime [2..]
+primes = 2 : minus [3..] (foldr (\p r-> p*p : union [p*p+p, p*p+2*p..] r) [] primes)
 
 primeFactors :: Integer -> [Integer]
 primeFactors n = let 
@@ -46,7 +67,18 @@ triangleNumbers = f <$> [1..]
     where f n = (n * (n + 1)) `div` 2
 
 palindromeNumber :: Integer -> Bool
-palindromeNumber n =  show n == (reverse $ show n)
+palindromeNumber n =  reverseNumber 10 n == n
+
+reverseNumber :: Integer -> Integer -> Integer
+reverseNumber base n = rev n 0
+    where 
+    rev :: Integer -> Integer -> Integer
+    rev x a 
+        | x > 0     = rev (x `div` base) (base * a + (x `mod` base))
+        | otherwise = a
+
+isPalindrome :: Eq a => [a] -> Bool
+isPalindrome xs = xs == reverse xs
 
 divisibleByAll :: [Integer] -> Integer -> Bool
 divisibleByAll xs x = all (`divisibleBy` x) xs
@@ -217,6 +249,18 @@ curiousNumbers :: [Integer]
 curiousNumbers =  [n | n <- [3..(factorial 9)], curious n]
     where 
     curious n = n == ( sum . map factorial $ iDigits n)
+
+rotations :: [a] -> [[a]]
+rotations xs = [drop n xs <> take n xs | n <- [0..length xs -1]]
+
+digitRotations :: Integer -> [Integer]
+digitRotations = fmap numify . rotations . iDigits
+
+circularPrime :: Integer -> Bool
+circularPrime = all isPrime . digitRotations
+
+toBinary :: Integer -> [Integer]
+toBinary n = dropWhile (== 0) $ foldl (\acc x-> if testBit n x then 1:acc else 0:acc) [] [0..127]
 
 --
 -- Problems
@@ -389,3 +433,9 @@ problem33 = product curiousFractions
 
 problem34 :: Integer
 problem34 = sum curiousNumbers
+
+problem35 :: Int  
+problem35 = length . filter circularPrime $ takeWhile (< 1000000) primes
+
+problem36 :: Integer
+problem36 = sum . filter (isPalindrome . toBinary) $ filter palindromeNumber [1..1000000]
