@@ -7,11 +7,13 @@ import Data.Char (digitToInt, ord, isAlpha)
 import Data.Function (on)
 import Data.List (intersect, find, maximumBy, permutations, sort, (\\), tails, nub, sortBy, nubBy)
 import Data.Monoid ((<>))
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, fromMaybe)
 import Data.Ord (comparing)
 import Data.Ratio (Rational, (%))
 import qualified Data.Map.Strict as M
 import qualified Data.Set        as S
+
+import Debug.Trace
 
 possibleFactors :: Integer -> [Integer]
 possibleFactors x = [2..(fromIntegral . floor . sqrt $ fromInteger x)]
@@ -281,8 +283,24 @@ truncations base n = nub $ n : catMaybes (go s dropRight <> go s dropLeft)
         x' = f base x
         in if x > 0 then (Just x) : go (f base x) f else go (f base x) f 
 
-numDigits :: Integer -> Integer
-numDigits n = may  find ()
+isPandigital :: Int -> Bool
+isPandigital n = isPandigital 9
+
+isPandigitalN :: Int -> Int -> Bool
+isPandigitalN len n = 
+    length ds == len && go ds [1..len]
+    where
+    ds = digits n
+    go [] [] = True
+    go [] _  = False
+    go _  [] = False  
+    go (x:xs) ls = go xs (filter (/= x) ls)
+
+powTenLength :: Int -> Int
+powTenLength n = fromMaybe 0 $ find (\i -> n `div` (10 ^ i) == 0) [1..]
+
+pandigitals :: Int -> [Int]
+pandigitals len =  numify <$> permutations [1..len]
 
 --
 -- Problems
@@ -471,9 +489,28 @@ problem37 = sum . (\\ nonTruncatable) .
           noContainOne :: Integer -> Bool  
           noContainOne   = notElem 1 . truncations 10
 
-problem38 :: Integer
-problem38 =  foldl 
+problem38 :: Int
+problem38 = foldl f 918273645 [1..10000]
     where
-    ns = [[1..n] | n <- [2..6]]
-    pandigitize x =  fmap (fmap (* x)) ns
+    f largest x =  let
+        x' = maximum . (\ls -> if null ls then [0] else ls) . filter isPandigital $ pandigitize x
+        in max largest x'
+    ns = [[1..n] | n <- [2..9]]
+    concatNums = foldl (\a x -> a * (10 ^ powTenLength x) + x) 0
+    pandigitize :: Int -> [Int]
+    pandigitize x = fmap (concatNums . fmap (* x)) ns
 
+--Note this is terribly inefficient, should use something like Euler's formula (implment this if I run across pythag triples again)
+problem39 :: Integer
+problem39 = fst . maximumBy (\(_, l) (_,r) -> l `compare` r ) $ M.toList accum
+    where triplets = [a+b+c| a <- [1..996], b <- [(a+1)..997], c <- [(b+1)..998], pythagTriplet a b c, (a + b + c) <= 1000]
+          accum = foldl (\acc p -> M.insertWith (+) p 1 acc) M.empty triplets       
+
+problem40 :: Int
+problem40 = product $ (ds !!) <$> ixs
+    where ds = take 1000001 . concat $ digits <$> [1..]
+          ixs =  (\x -> 10 ^ x -1 ) <$> [0..6]
+
+problem41 :: Int
+problem41 = maximum $ concat px
+    where px = filter (isPrime . toInteger) . pandigitals <$> [1..9]
