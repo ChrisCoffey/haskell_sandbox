@@ -5,7 +5,7 @@ import qualified Info.EarlyProblems as EPI
 import Data.Bits (testBit)
 import Data.Char (digitToInt, ord, isAlpha)
 import Data.Function (on)
-import Data.List (intersect, find, maximumBy, permutations, sort, (\\), tails, nub, sortBy, nubBy)
+import Data.List (intersect, find, maximumBy, permutations, sort, (\\), tails, nub, sortBy, nubBy, insert, isPrefixOf)
 import Data.Monoid ((<>))
 import Data.Maybe (catMaybes, fromMaybe)
 import Data.Ord (comparing)
@@ -302,6 +302,9 @@ powTenLength n = fromMaybe 0 $ find (\i -> n `div` (10 ^ i) == 0) [1..]
 pandigitals :: Int -> [Int]
 pandigitals len =  numify <$> permutations [1..len]
 
+wordScore :: String -> Int
+wordScore s = sum $ ( (\x -> x-64) . ord) <$> s
+
 --
 -- Problems
 --
@@ -514,3 +517,32 @@ problem40 = product $ (ds !!) <$> ixs
 problem41 :: Int
 problem41 = maximum $ concat px
     where px = filter (isPrime . toInteger) . pandigitals <$> [1..9]
+
+problem42 :: Int
+problem42 = length . filter (`S.member` ts) $ wordScore <$> EPI.problem42
+    where 
+    ts = S.fromList . take 1000 $ fromIntegral <$> triangleNumbers
+
+--problem43 :: Int
+problem43 = take 500 zToNinePans
+    where
+    l b a = numify $ last (digits b) `insert` digits a 
+    t = numify . tail . digits 
+    prfx x y = (tail $ digits x) `isPrefixOf` digits y
+    zToNinePans = [l g . l f . l e . l d . l c $ l b a |
+                    a <- p 2,
+                    b <- p 3,
+                    c <- p 5,
+                    d <- p 7,
+                    e <- p 11,
+                    f <- p 13,
+                    g <- p 17,
+                    prfx a b && distinctDigits a b,
+                    prfx b c && distinctDigits b c,
+                    prfx c d && distinctDigits c d,
+                    prfx d e && distinctDigits d e,
+                    prfx e f && distinctDigits e f,
+                    prfx f g && distinctDigits f g
+                    ]
+    distinctDigits x y = (digits x \\ digits y) == digits x
+    p x=  filter (\n -> (digits n == (nub $ digits n)) && n > 10) [x, x + x..1000]
