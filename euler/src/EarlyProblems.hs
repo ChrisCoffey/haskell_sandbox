@@ -7,6 +7,7 @@ import Data.Char (digitToInt, ord, isAlpha)
 import Data.Function (on)
 import Data.List (intersect, find, maximumBy, permutations, sort, (\\), tails, nub, sortBy, nubBy)
 import Data.Monoid ((<>))
+import Data.Maybe (catMaybes)
 import Data.Ord (comparing)
 import Data.Ratio (Rational, (%))
 import qualified Data.Map.Strict as M
@@ -262,6 +263,27 @@ circularPrime = all isPrime . digitRotations
 toBinary :: Integer -> [Integer]
 toBinary n = dropWhile (== 0) $ foldl (\acc x-> if testBit n x then 1:acc else 0:acc) [] [0..127]
 
+dropLeft :: Integer -> Integer -> Maybe Integer
+dropLeft _ 0    = Nothing
+dropLeft base n = Just $ n `div` base
+
+dropRight :: Integer -> Integer -> Maybe Integer
+dropRight _ 0 = Nothing
+dropRight base n = (n `mod`) <$> maxBase
+    where maxBase = (\i-> base ^ (i-1)) <$> find (\i-> n `div` (base ^ i) == 0) [1..]
+
+truncations :: Integer -> Integer -> [Integer]
+truncations base n = nub $ n : catMaybes (go s dropRight <> go s dropLeft)
+    where
+    s = Just n
+    go Nothing _    = []
+    go (Just x) f   = let
+        x' = f base x
+        in if x > 0 then (Just x) : go (f base x) f else go (f base x) f 
+
+numDigits :: Integer -> Integer
+numDigits n = may  find ()
+
 --
 -- Problems
 --
@@ -439,3 +461,19 @@ problem35 = length . filter circularPrime $ takeWhile (< 1000000) primes
 
 problem36 :: Integer
 problem36 = sum . filter (isPalindrome . toBinary) $ filter palindromeNumber [1..1000000]
+
+problem37 :: Integer
+problem37 = sum . (\\ nonTruncatable) . 
+        filter noContainOne . 
+        filter (all isPrime . truncations 10) $ 
+        takeWhile (< 1000000) primes
+    where nonTruncatable = [2,3,5,7]
+          noContainOne :: Integer -> Bool  
+          noContainOne   = notElem 1 . truncations 10
+
+problem38 :: Integer
+problem38 =  foldl 
+    where
+    ns = [[1..n] | n <- [2..6]]
+    pandigitize x =  fmap (fmap (* x)) ns
+
