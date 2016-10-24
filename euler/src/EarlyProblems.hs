@@ -305,6 +305,21 @@ pandigitals len =  numify <$> permutations [1..len]
 wordScore :: String -> Int
 wordScore s = sum $ ( (\x -> x-64) . ord) <$> s
 
+pentagonalNums :: [Int]
+pentagonalNums =  f <$> [1..]
+    where f n = n * ((3 * n) -1) `div` 2
+
+hexagonalNums :: [Int]
+hexagonalNums = f <$> [1..]
+    where f n = n * ((2 *n) -1)
+
+pairs :: [a] -> [(a,a)]
+pairs xs = f xs (tail xs)
+    where 
+    f [] _  = []
+    f (a:as) [] = f as (tail as)
+    f (a:as) (b:bs) = (a,b):f (a:as) bs
+
 --
 -- Problems
 --
@@ -546,3 +561,18 @@ problem43 = take 500 zToNinePans
                     ]
     distinctDigits x y = (digits x \\ digits y) == digits x
     p x=  filter (\n -> (digits n == (nub $ digits n)) && n > 10) [x, x + x..1000]
+
+problem44 :: Maybe Int 
+problem44 = (\(a,b)-> b - a) <$> find (\(a,b)-> pDiff a b && pSum a b) px
+    where 
+    pSum x y = x + y `elem` ps
+    pDiff x y = (max x y) - (min x y) `elem` ps
+    ps = take 4000 pentagonalNums
+    px = sortBy (\(a,b) (x,y)-> compare (x-y) (a-b)) $ pairs ps
+    
+problem45 :: Int
+problem45 = head . intersect h' $ intersect p' t'
+    where 
+    h' = dropWhile (<= 40755) hexagonalNums
+    p' = dropWhile (<= 40755) pentagonalNums
+    t' = fromInteger <$> dropWhile (<= 40755) triangleNumbers
