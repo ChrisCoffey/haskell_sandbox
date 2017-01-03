@@ -8,9 +8,16 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module TypeGenerics where
- 
+
+import GHC.Exts
+import Data.Proxy
+
  --This is an unihabited type, meaning there are no values of type Nat
 data Nat = Zero | Succ Nat
 
@@ -148,7 +155,75 @@ hpure x = go sList
     go :: forall xs. SList xs -> NP f xs
     go SNil = NNil
     go SCons = x :* go sList
-
-hRemove :: (SListI xs, SListI ys) => a -> NP f xs -> NP f ys 
-hRemove
  
+{- WIP exercise. I'm not sure if this is possible with singelton types because it requires
+ - jumping between the type an value levels. Using a 'K' it seems a bit more plausible, but
+ - I'll need some type-level function that compares between the two types on a 'K'
+hRemove :: (SListI xs, SListI ys) => K a b -> NP f xs -> NP f ys 
+hRemove _ NNil = NNil
+hRemove k (x :* xs) = go k x
+    where 
+    go :: 
+-} 
+
+--This somewhat addresses the above concern about modifying (via `apply`) an HList
+
+newtype (f -.-> g) a = Fn {apFn :: f a -> g a}
+infixr 1 -.->
+
+hApply :: NP (f -.-> g) xs -> NP f xs -> NP g xs
+hApply NNil NNil = NNil
+hApply (f :* fs) (x :* xs) = apFn f x :* hApply fs xs
+
+l <&> r = hApply l r
+infixl 5 <&>
+
+--Makes sense because I'm using the list kind
+ls :: NP [] '[String, Int]
+ls = ["foo", "bar", "baz"] :* [1..10] :* NNil
+
+numbers :: NP (K Int) '[String, Int]
+numbers = K 2 :* K 5 :* NNil
+
+fn_2 :: (f a -> g a -> h a) -> (f -.-> g -.-> h) a
+fn_2 f = Fn (Fn . f ) 
+
+hTake :: (K Int -.-> [] -.-> []) a
+hTake = fn_2 (\(K n) xs -> take n xs)
+
+--Proof that application actually produces the correct type
+hApplyTest :: NP [] '[String, Int]
+hApplyTest = hpure hTake <&> numbers <&> ls
+
+
+--Getting into type functions, beyond simple data structures
+
+{- This expands out via `:kind!` in ghci to apply `Eq` to each element of the hList -}
+type family All (c :: k -> Constraint) (xs :: [k]) :: Constraint where
+    All c '[] = ()
+    All c (x ': xs) = (c x, All c xs)
+
+hListToString :: All Show xs => HList xs -> String
+hListToString HNil = ""
+hListToString (x `HCons` xs) = show x ++ hListToString xs
+
+class (f (g x)) => (f `Compose` g) x
+instance (f (g x)) => (f `Compose` g) x
+
+npToString :: All (Show `Compose` f) xs => NP f xs -> String
+npToString NNil = ""
+npToString (x :* xs) = show x ++ npToString xs
+
+deriving instance (All (Compose Show f) xs) => Show (NP f xs)
+
+-- Allows a specific constraint on the 
+hcPure :: 
+    forall c f xs.  (SListI xs, All c xs) => 
+    Proxy c -> 
+    (forall a. c a => f a) -> 
+    NP f xs
+hcPure p x = go sList
+    where
+    go :: forall xs. All c xs => SList xs -> NP f xs
+    go SNil = NNil
+    go SCons = x :* go sList
