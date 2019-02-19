@@ -4,8 +4,17 @@
 {-# LANGUAGE TypeFamilies #-} -- For type-level functions
 {-# LANGUAGE UndecidableInstances #-} 
 {-# LANGUAGE TypeOperators #-} 
+{-# LANGUAGE FlexibleInstances #-} -- For HList instances
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module DependentTypes where
+
+
+--
+-- Sized Vectors
+--
 
 data Nat = Zero | Succ Nat
     deriving Show
@@ -98,4 +107,41 @@ vZipWith _ VNil (_ `VCons` _) = VNil
 vZipWith _ (_ `VCons` _) VNil = VNil
 vZipWith f (a `VCons` as) (b `VCons` bs) = f a b `VCons` vZipWith f as bs
 
+vfoldr :: (a -> b -> b) -> b -> Vector n a -> b
+vfoldr _ seed VNil = seed 
+vfoldr f seed (a `VCons` as) = f a (vfoldr f seed as)
 
+--
+-- HLists
+--
+
+data HList xs where
+    HNil :: HList '[]
+    (:::) :: a -> HList as -> HList (a ': as)
+
+infixr 6 :::
+ 
+instance Show (HList '[]) where
+    show HNil = "'[]"
+
+instance (Show (HList rest), Show a) => Show (HList (a ': rest)) where
+    show (a:::rest) = show a ++ " ::: " ++ show rest
+   
+--
+-- Extensible Records
+--
+
+newtype s >> a = Named a
+
+-- This is an hlist with named elements rather than just ordinal elements
+data HRec xs where
+    HEmpty :: HRec '[]
+    HCons :: (s >> a) -> HRec xs -> HRec (s >> a ': xs)
+
+instance Show (HRec '[]) where
+    show HEmpty = "HEmpty"
+
+instance (Show a, KnownSymbol s) => Show (HRec (s >> a ': xs)) where
+    show (HCons (Named a) rest) = 
+        let val = show a
+            key = symbolVal (undefined :: x s)
