@@ -47,3 +47,50 @@ example n =
              (pythagoras' 19 n)
              (plusTwenty n)
 
+
+--
+-- try {
+--    a
+-- } catch {
+--    b
+-- }
+-- c
+--
+try ::
+    (CPS a r -> CPS a r -> CPS a r) -- ^ try body
+    -> (CPS a r -> CPS a r -> CPS a r) -- ^ catch body
+    -> CPS a r -- ^ outer normal
+    -> CPS a r -- ^ outer error
+    -> CPS a r
+try tBody cBody outerSucc outerErr = CPS $ \next ->
+    runCPS (tBody outerSucc $ cBody outerSucc outerErr) $ next
+
+
+-- Given two CPS, call the second one
+throw ::
+    CPS a r -- ^ normal path. This is ignored
+    -> CPS a r -- ^ Error path
+    -> CPS a r
+throw = flip const
+
+tryCatchExample :: (Num a, Ord a) =>
+    a
+    -> CPS a r
+tryCatchExample n =
+    try
+        (\ happy sad -> terniary (n < 10)
+                  (throw happy $ CPS (error "boo"))
+                  (sad)
+        ) -- try body
+        (\happy sad -> terniary (n > 50)
+                  happy
+                  sad
+        ) -- catch body
+        (plusTwenty n) -- outer next step
+        topLevelError -- outer error handler
+    where
+        topLevelError = CPS $ error "Hit an error!"
+
+
+
+
