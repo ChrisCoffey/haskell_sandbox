@@ -122,3 +122,11 @@ instance Applicative (CPS r) where
 instance Monad (CPS r) where
     (CPS cont) >>= next =
         CPS $ \b -> cont $ \a -> runCPS (next a) b
+
+
+callCPS ::
+    ((a -> CPS r b) -> CPS r a)
+    -> CPS r a
+callCPS aCont = CPS $ \next ->
+    runCPS (aCont (\a -> CPS $ \_ -> next a)) next
+
