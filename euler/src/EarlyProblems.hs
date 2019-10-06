@@ -28,7 +28,7 @@ fibonacciS :: [Integer]
 fibonacciS = 0 : 1 : zipWith (+) fibonacciS (tail fibonacciS)
 
 isPrime :: Integer -> Bool
-isPrime n   
+isPrime n
     | n <= 0    = False
     | otherwise = not (any (`divisibleBy` n) possibleFactors)
     where possibleFactors = [2..(fromIntegral . floor . sqrt $ fromInteger n)]
@@ -40,7 +40,7 @@ slowPrimes = 2 : filter isPrime [3,5..]
 
 --Walk a pair of sorted lists & efficiently subtract the sencond from the first
 minus :: Ord a => [a] -> [a] -> [a]
-minus (x:xs) (y:ys) = 
+minus (x:xs) (y:ys) =
     case compare x y of
         LT -> x: minus xs (y:ys)
         GT -> minus (x:xs) ys
@@ -48,7 +48,7 @@ minus (x:xs) (y:ys) =
 minus xs _ = xs --Covers the empty list case b/c it has already passed the pattern above
 
 union :: Ord a => [a] -> [a] -> [a]
-union (x:xs) (y:ys) = 
+union (x:xs) (y:ys) =
     case compare x y of
         LT -> x: union xs (y:ys)
         GT -> y: union (x:xs) ys
@@ -59,7 +59,7 @@ primes :: [Integer]
 primes = 2 : minus [3..] (foldr (\p r-> p*p : union [p*p+p, p*p+2*p..] r) [] primes)
 
 primeFactors :: Integer -> [Integer]
-primeFactors n = let 
+primeFactors n = let
     maxFactor = maximum possibleFactors
     possiblePrimes = takeWhile (< maxFactor) primes
     in possiblePrimes `intersect` possibleFactors
@@ -74,9 +74,9 @@ palindromeNumber n =  reverseNumber 10 n == n
 
 reverseNumber :: Integer -> Integer -> Integer
 reverseNumber base n = rev n 0
-    where 
+    where
     rev :: Integer -> Integer -> Integer
-    rev x a 
+    rev x a
         | x > 0     = rev (x `div` base) (base * a + (x `mod` base))
         | otherwise = a
 
@@ -95,7 +95,7 @@ squareOfSums xs = let
     in x' * x'
 
 window :: Int -> [a] -> [[a]]
-window n xs 
+window n xs
     | null $ drop n xs  = []
     | otherwise         = take n xs : window n (tail xs)
 
@@ -114,22 +114,22 @@ gridProducts f runLength rows = let
     as= map (\x -> map (drop x) (drop x backwards)) [0..runLength-1]
     in [computed xs, computed ys, computed zs, computed as]
     where computed :: [Grid] -> Grid
-          computed = foldl1 computeGrid 
+          computed = foldl1 computeGrid
           computeGrid :: Grid -> Grid -> Grid
-          computeGrid = zipWith computeRows 
+          computeGrid = zipWith computeRows
           computeRows :: Row -> Row -> Row
-          computeRows = zipWith f 
+          computeRows = zipWith f
 
 factorCount :: Integer -> Integer
 factorCount n = foldl f 0 [1..(fromIntegral . floor . sqrt $ fromInteger n)]
-    where f acc x 
+    where f acc x
             | divisibleBy x n = acc + 2
             | otherwise = acc
 
 --This is very memory inefficient, there's likely an equation that's more efficient
 collatzSeq :: [(Integer, Integer)]
 collatzSeq = go M.empty 1 1 1
-    where 
+    where
         go :: M.Map Integer Integer -> Integer -> Integer -> Integer -> [(Integer, Integer)]
         go subs n m acc
             | n `M.member` subs = let
@@ -166,13 +166,13 @@ maximumPathPyramid ls = let
     ls'     = reverse . tail $ rls
     baseLayer = map Block base
     in maxPath . head $ foldr makeLayer baseLayer ls'
-    where 
-        makeLayer ::  [Integer] -> PyramidLayer -> PyramidLayer 
+    where
+        makeLayer ::  [Integer] -> PyramidLayer -> PyramidLayer
         makeLayer raw prevLayer = let
             ridx = zip raw [0..]
             in foldr go [] ridx
             where f (Block l) (Block r) x = Block (x + (max l r))
-                  go (x, i) layer = f (prevLayer !! i) (prevLayer !! (i + 1)) x : layer 
+                  go (x, i) layer = f (prevLayer !! i) (prevLayer !! (i + 1)) x : layer
 
 properDivisors :: Integer -> [Integer]
 properDivisors n =  1:actualFactors
@@ -182,8 +182,8 @@ areAmicable :: Integer -> Integer -> Bool
 areAmicable x y = (sum $ properDivisors x) == (sum $ properDivisors y)
 
 split :: Eq a => a -> [a] -> [[a]]
-split a = f . foldr step ([],[]) 
-    where 
+split a = f . foldr step ([],[])
+    where
     f (as, acc) = as:acc
     step x (as, acc)
         |x == a         = ([], as:acc)
@@ -192,7 +192,7 @@ split a = f . foldr step ([],[])
 stripOut :: Eq a => a -> [a] -> [a]
 stripOut a = foldr step []
     where
-    step x acc 
+    step x acc
         | x == a        = acc
         | otherwise     = x:acc
 
@@ -221,7 +221,7 @@ nthPowerSumFast m xs = sum $ (m M.!) <$> xs
 combinations :: [Int] -> Int -> [[Int]]
 combinations _ 0        = [[]]
 combinations [] _       = []
-combinations (x:xs) n   
+combinations (x:xs) n
     | x <= n            = (x:) <$> (combinations (x:xs) (n - x)) ++  (combinations (xs) n)
     | otherwise         = combinations (xs) n
 
@@ -230,18 +230,21 @@ overlappingDigits f l r = (f l \\ f r) /= (f l )
 
 toInts :: [Int] -> Int -> (Int, Int)
 toInts xs n = (a, b)
-    where 
+    where
     a = numify $ take n xs
     b = numify $ drop n xs
 
 numify :: Num a => [a] -> a
 numify = fst . foldr (\x (y, t)-> (y+(x*(10^t)), t+1)) (0,0)
 
+intListToNum :: Num a => [a] -> a
+intListToNum = foldl (\acc a -> a + (acc * 10)) 0
+
 curiousFractions :: [Rational]
 curiousFractions = [n % d | n <- [1..99], d <- [99,98..n], curious n d]
-    where 
+    where
     cancel :: Integer -> Integer -> Integer
-    cancel n d = let 
+    cancel n d = let
         n' = toInteger . numify $ (iDigits n \\ iDigits d)
         in if n' >= 1 then n' else 100000
     curious n d
@@ -250,7 +253,7 @@ curiousFractions = [n % d | n <- [1..99], d <- [99,98..n], curious n d]
 
 curiousNumbers :: [Integer]
 curiousNumbers =  [n | n <- [3..(factorial 9)], curious n]
-    where 
+    where
     curious n = n == ( sum . map factorial $ iDigits n)
 
 rotations :: [a] -> [[a]]
@@ -281,19 +284,19 @@ truncations base n = nub $ n : catMaybes (go s dropRight <> go s dropLeft)
     go Nothing _    = []
     go (Just x) f   = let
         x' = f base x
-        in if x > 0 then (Just x) : go (f base x) f else go (f base x) f 
+        in if x > 0 then (Just x) : go (f base x) f else go (f base x) f
 
 isPandigital :: Int -> Bool
 isPandigital n = isPandigital 9
 
 isPandigitalN :: Int -> Int -> Bool
-isPandigitalN len n = 
+isPandigitalN len n =
     length ds == len && go ds [1..len]
     where
     ds = digits n
     go [] [] = True
     go [] _  = False
-    go _  [] = False  
+    go _  [] = False
     go (x:xs) ls = go xs (filter (/= x) ls)
 
 powTenLength :: Int -> Int
@@ -315,7 +318,7 @@ hexagonalNums = f <$> [1..]
 
 pairs :: [a] -> [(a,a)]
 pairs xs = f xs (tail xs)
-    where 
+    where
     f [] _  = []
     f (a:as) [] = f as (tail as)
     f (a:as) (b:bs) = (a,b):f (a:as) bs
@@ -359,7 +362,7 @@ problem10 = sum . takeWhile (< 10) $ primes
 problem11 :: Integer
 problem11 = maximum . maximum . map maximum $ gridProducts (*) 4 grid
     where grid = EPI.problem11
-            
+
 
 problem12 :: Maybe Integer
 problem12 = find ((> 500) . factorCount) triangleNumbers
@@ -371,7 +374,7 @@ problem14 :: Integer
 problem14 = fst . maximumBy cmp . take 1000000 $ collatzSeq
     where cmp (a, al) (b, bl) = al `compare` bl
 
-problem15 :: Integer 
+problem15 :: Integer
 problem15 = centralBinomialCoefficient 20
 
 --This is easy to brute force thanks to Integer, but there must be a better way
@@ -380,7 +383,7 @@ problem16 = sum . map digitToInt . show $ 2 ^ 1000
 
 problem17 :: Int
 problem17 = sum . map (length . stringify) $ [1..1000]
-    where stringify n 
+    where stringify n
             | n == 0                = ""
             | n == 10               = "ten"
             | n == 11               = "eleven"
@@ -402,13 +405,13 @@ problem18 = maximumPathPyramid EPI.problem18
 
 --concatMap is effectively flatMap from scala wrt List a
 problem19 :: Int
-problem19 = 
+problem19 =
     length . filter isMatch . drop 365 . zip weeks . concat . concatMap (\y -> map (month y) [1..12]) $ [1900..2000]
     where
     isMatch (1,1) = True
     isMatch _     = False
     weeks = cycle [2,3,4,5,6,7,1]
-    month y m 
+    month y m
         | m `elem` [4,6,9,11]      = [1..30]
         | m == 2 && isLeapYear y   = [1..29]
         | m == 2                   = [1..28]
@@ -430,7 +433,7 @@ problem22 = do
     let aScored = toInteger .  sum . map ((\x -> x - 64) . ord) <$> sNames
     let finalScore = zipWith (*) aScored [1..]
     pure $ sum finalScore
-  
+
 problem23 :: Integer
 problem23 = let
     as = takeWhile (< 28123) abundantNumbers
@@ -451,17 +454,17 @@ problem26 :: Integer
 problem26 =  head . filter (\n -> reciprocalCycle n == n - 1 ) . reverse . takeWhile (< 1000) $ primes
 
 problem27 :: (Integer, Integer)
-problem27 = maximumBy (compare `on` (length . uncurry quadPrimes)) coefs 
+problem27 = maximumBy (compare `on` (length . uncurry quadPrimes)) coefs
     where coefs = [(a,b)| a <- [-999..999], b <- filter isPrime [0..999]]
           f a b n =  (n^2) + (a * n) + b
           quadPrimes :: Integer -> Integer -> [Integer]
           quadPrimes a b = takeWhile isPrime (f a b <$> [0..])
 
-problem28 :: Integer 
+problem28 :: Integer
 problem28 = sum $ spriralDiagonals 500
     where
     spriralDiagonals n = foldl f [1] [1..n]
-        where f (x:xs) depth = let 
+        where f (x:xs) depth = let
                 y = depth * 2
                 in  (4*y) + x : (3*y)+ x : (2*y) + x: y + x:x:xs
 
@@ -469,21 +472,21 @@ problem29 :: Int
 problem29 = length $ distinctPowers 100 100
 
 problem30 :: Int
-problem30 = sum $ filter (\n -> (\xs -> nthPowerSumFast m xs == n) $ digits n) [2..limit] 
+problem30 = sum $ filter (\n -> (\xs -> nthPowerSumFast m xs == n) $ digits n) [2..limit]
     where m = M.fromList . zip [0..] . fmap (^5) $ [0..9]
           limit = 6 * (9^5)
 
-problem31 :: Int 
-problem31 = length $ combinations [1,2,5,10,20,50,100,200] 200 
+problem31 :: Int
+problem31 = length $ combinations [1,2,5,10,20,50,100,200] 200
 
 problem32 :: Int
 problem32 = permSum 2 (ps 5) + permSum 2 (ps 4) + permSum 1 (ps 4) + permSum 1 (ps 5)
-    where 
+    where
     permSum n xs = sum . fmap (\(_,_,x)-> x) . nubBy sameProduct . filter pandigitalProd $ prods . flip toInts n <$> xs
     sameProduct (_, _, a) (_, _, b) = a == b
     ps n = nub $ take n <$> permutations [1..9]
     prods (a,b) = (a,b, a*b)
-    xs = [1..9] 
+    xs = [1..9]
     pandigitalProd (a,b,c) = (== xs) . sort $ concatMap (fmap digitToInt . show) [a,b,c]
 
 problem33 :: Rational
@@ -492,19 +495,19 @@ problem33 = product curiousFractions
 problem34 :: Integer
 problem34 = sum curiousNumbers
 
-problem35 :: Int  
+problem35 :: Int
 problem35 = length . filter circularPrime $ takeWhile (< 1000000) primes
 
 problem36 :: Integer
 problem36 = sum . filter (isPalindrome . toBinary) $ filter palindromeNumber [1..1000000]
 
 problem37 :: Integer
-problem37 = sum . (\\ nonTruncatable) . 
-        filter noContainOne . 
-        filter (all isPrime . truncations 10) $ 
+problem37 = sum . (\\ nonTruncatable) .
+        filter noContainOne .
+        filter (all isPrime . truncations 10) $
         takeWhile (< 1000000) primes
     where nonTruncatable = [2,3,5,7]
-          noContainOne :: Integer -> Bool  
+          noContainOne :: Integer -> Bool
           noContainOne   = notElem 1 . truncations 10
 
 problem38 :: Int
@@ -522,7 +525,7 @@ problem38 = foldl f 918273645 [1..10000]
 problem39 :: Integer
 problem39 = fst . maximumBy (\(_, l) (_,r) -> l `compare` r ) $ M.toList accum
     where triplets = [a+b+c| a <- [1..996], b <- [(a+1)..997], c <- [(b+1)..998], pythagTriplet a b c, (a + b + c) <= 1000]
-          accum = foldl (\acc p -> M.insertWith (+) p 1 acc) M.empty triplets       
+          accum = foldl (\acc p -> M.insertWith (+) p 1 acc) M.empty triplets
 
 problem40 :: Int
 problem40 = product $ (ds !!) <$> ixs
@@ -535,44 +538,49 @@ problem41 = maximum $ concat px
 
 problem42 :: Int
 problem42 = length . filter (`S.member` ts) $ wordScore <$> EPI.problem42
-    where 
+    where
     ts = S.fromList . take 1000 $ fromIntegral <$> triangleNumbers
 
---problem43 :: Int
-problem43 = take 500 zToNinePans
+problem43 :: Int
+problem43 =
+    sum . map intListToNum . algo $ zeroNinePandigitals
     where
-    l b a = numify $ last (digits b) `insert` digits a 
-    t = numify . tail . digits 
-    prfx x y = (tail $ digits x) `isPrefixOf` digits y
-    zToNinePans = [l g . l f . l e . l d . l c $ l b a |
-                    a <- p 2,
-                    b <- p 3,
-                    c <- p 5,
-                    d <- p 7,
-                    e <- p 11,
-                    f <- p 13,
-                    g <- p 17,
-                    prfx a b && distinctDigits a b,
-                    prfx b c && distinctDigits b c,
-                    prfx c d && distinctDigits c d,
-                    prfx d e && distinctDigits d e,
-                    prfx e f && distinctDigits e f,
-                    prfx f g && distinctDigits f g
-                    ]
-    distinctDigits x y = (digits x \\ digits y) == digits x
-    p x=  filter (\n -> (digits n == (nub $ digits n)) && n > 10) [x, x + x..1000]
+    algo :: [[Int]] -> [[Int]]
+    algo xs = filter (condition . trigrams) xs
 
-problem44 :: Maybe Int 
+    zeroNinePandigitals :: [[Int]]
+    zeroNinePandigitals = permutations [0..9]
+
+    trigram :: [Int] -> [Int]
+    trigram = take 3
+
+    trigrams :: [Int] -> [Int]
+    trigrams [_, _, _] = []
+    trigrams (_:rest) = intListToNum (trigram rest) : trigrams rest
+
+    condition :: [Int] -> Bool
+    condition [a, b, c, d, e, f, g] =
+        a `mod` 2 == 0 &&
+        b `mod` 3 == 0 &&
+        c `mod` 5 == 0 &&
+        d `mod` 7 == 0 &&
+        e `mod` 11 == 0 &&
+        f `mod` 13 == 0 &&
+        g `mod` 17 == 0
+    condition xs = trace (show xs) False
+
+
+problem44 :: Maybe Int
 problem44 = (\(a,b)-> b - a) <$> find (\(a,b)-> pDiff a b && pSum a b) px
-    where 
+    where
     pSum x y = x + y `elem` ps
     pDiff x y = (max x y) - (min x y) `elem` ps
     ps = take 4000 pentagonalNums
     px = sortBy (\(a,b) (x,y)-> compare (x-y) (a-b)) $ pairs ps
-    
+
 problem45 :: Int
 problem45 = head . intersect h' $ intersect p' t'
-    where 
+    where
     h' = dropWhile (<= 40755) hexagonalNums
     p' = dropWhile (<= 40755) pentagonalNums
     t' = fromInteger <$> dropWhile (<= 40755) triangleNumbers

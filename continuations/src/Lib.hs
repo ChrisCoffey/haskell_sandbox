@@ -130,3 +130,26 @@ callCPS ::
 callCPS aCont = CPS $ \next ->
     runCPS (aCont (\a -> CPS $ \_ -> next a)) next
 
+betterTryCatch ::
+    ((e -> CPS r a) -> CPS r a)
+    -> (e -> CPS r a)
+    -> CPS r a
+betterTryCatch computation errorHandler =
+    callCPS $ \success -> do
+        e <- callCPS $ \abortOnFailure -> do
+            a <- computation abortOnFailure
+            success a
+        errorHandler e
+
+-- take each singleton list
+-- for each singleton list, create all possible two-element lists
+-- repeatedly build up the list until all elements have been accounted for
+permutations :: (Eq a) => [a] -> [[a]]
+permutations [x] = [[x]]
+permutations xs@(x:rest) = concatMap (\a -> (a:) <$> permutations (filterFirst a xs)) xs
+    where
+        filterFirst _ [] = []
+        filterFirst a (z:zs)
+            | a == z = zs
+            | otherwise = z : filterFirst a zs
+
