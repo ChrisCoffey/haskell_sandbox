@@ -69,6 +69,9 @@ triangleNumbers :: [Integer]
 triangleNumbers = f <$> [1..]
     where f n = (n * (n + 1)) `div` 2
 
+triangleNumber :: Int -> Int
+triangleNumber n = n * (n+1) `div` 2
+
 palindromeNumber :: Integer -> Bool
 palindromeNumber n =  reverseNumber 10 n == n
 
@@ -309,12 +312,17 @@ wordScore :: String -> Int
 wordScore s = sum $ ( (\x -> x-64) . ord) <$> s
 
 pentagonalNums :: [Int]
-pentagonalNums =  f <$> [1..]
-    where f n = n * ((3 * n) -1) `div` 2
+pentagonalNums =  pentagonalNum <$> [1..]
+
+pentagonalNum :: Int -> Int
+pentagonalNum n = n * ( (3 * n) -1 ) `div` 2
 
 hexagonalNums :: [Int]
 hexagonalNums = f <$> [1..]
     where f n = n * ((2 *n) -1)
+
+hexagonalNum :: Int -> Int
+hexagonalNum n = n * ((2*n) - 1)
 
 pairs :: [a] -> [(a,a)]
 pairs xs = f xs (tail xs)
@@ -578,9 +586,22 @@ problem44 = (\(a,b)-> b - a) <$> find (\(a,b)-> pDiff a b && pSum a b) px
     ps = take 4000 pentagonalNums
     px = sortBy (\(a,b) (x,y)-> compare (x-y) (a-b)) $ pairs ps
 
-problem45 :: Int
-problem45 = head . intersect h' $ intersect p' t'
-    where
-    h' = dropWhile (<= 40755) hexagonalNums
-    p' = dropWhile (<= 40755) pentagonalNums
-    t' = fromInteger <$> dropWhile (<= 40755) triangleNumbers
+problem45 :: Maybe Int
+problem45 = find (\x -> isTriangular x && isPentagonal x) $ hexagonalNum <$> [144..]
+
+isTriangular :: Int -> Bool
+isTriangular t = let
+    t' = fromIntegral t :: Double
+    sq = sqrt ((8*t')+1)
+    (_, remainder) = properFraction sq
+    in remainder == 0
+
+isPentagonal :: Int -> Bool
+isPentagonal p = let
+    p' = fromIntegral p :: Double
+    sq = (sqrt ((24*p')+1) + 1) / 6
+    (_, remainder) = properFraction sq
+    in remainder == 0
+
+
+
