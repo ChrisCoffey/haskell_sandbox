@@ -324,6 +324,21 @@ hexagonalNums = f <$> [1..]
 hexagonalNum :: Int -> Int
 hexagonalNum n = n * ((2*n) - 1)
 
+isTriangular :: Int -> Bool
+isTriangular t = let
+    t' = fromIntegral t :: Double
+    sq = sqrt ((8*t')+1)
+    (_, remainder) = properFraction sq
+    in remainder == 0
+
+isPentagonal :: Int -> Bool
+isPentagonal p = let
+    p' = fromIntegral p :: Double
+    sq = (sqrt ((24*p')+1) + 1) / 6
+    (_, remainder) = properFraction sq
+    in remainder == 0
+
+
 pairs :: [a] -> [(a,a)]
 pairs xs = f xs (tail xs)
     where
@@ -589,19 +604,19 @@ problem44 = (\(a,b)-> b - a) <$> find (\(a,b)-> pDiff a b && pSum a b) px
 problem45 :: Maybe Int
 problem45 = find (\x -> isTriangular x && isPentagonal x) $ hexagonalNum <$> [144..]
 
-isTriangular :: Int -> Bool
-isTriangular t = let
-    t' = fromIntegral t :: Double
-    sq = sqrt ((8*t')+1)
-    (_, remainder) = properFraction sq
-    in remainder == 0
-
-isPentagonal :: Int -> Bool
-isPentagonal p = let
-    p' = fromIntegral p :: Double
-    sq = (sqrt ((24*p')+1) + 1) / 6
-    (_, remainder) = properFraction sq
-    in remainder == 0
-
+problem46 :: Maybe Integer
+problem46 =
+    find check composites
+    where
+        check x = let
+            dLT = S.filter (< x) doubleSquares
+            g [] = True
+            g (a:rest) = if S.member (x-a) tenKPrimes
+                         then False
+                         else g rest
+            in g (S.toList dLT)
+        doubleSquares = S.fromList . take 10000 $ floor . (* 2) . (** 2) <$> [1..]
+        tenKPrimes = S.fromList $ take 10000 primes
+        composites = filter (`S.notMember` tenKPrimes) [3,5..]
 
 
