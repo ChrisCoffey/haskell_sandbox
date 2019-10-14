@@ -5,9 +5,12 @@ import qualified Info.EarlyProblems as EPI
 import Data.Bits (testBit)
 import Data.Char (digitToInt, ord, isAlpha)
 import Data.Function (on)
-import Data.List (intersect, find, maximumBy, permutations, sort, (\\), tails, nub, sortBy, nubBy, insert, isPrefixOf)
+import Data.List (intersect, partition, find, maximumBy, permutations, sort,
+    (\\), tails, nub, sortBy, nubBy, insert, isPrefixOf, sortOn, groupBy,
+    subsequences)
 import Data.Monoid ((<>))
 import Data.Maybe (catMaybes, fromMaybe)
+import Data.Foldable (foldl')
 import Data.Ord (comparing)
 import Data.Ratio (Rational, (%))
 import qualified Data.Map.Strict as M
@@ -58,12 +61,13 @@ union xs _ = xs
 primes :: [Integer]
 primes = 2 : minus [3..] (foldr (\p r-> p*p : union [p*p+p, p*p+2*p..] r) [] primes)
 
+-- Produces a list of the lower factors (meaning x*y = z), if x < y, then x is the lower factor
 primeFactors :: Integer -> [Integer]
-primeFactors n = let
-    maxFactor = maximum possibleFactors
-    possiblePrimes = takeWhile (< maxFactor) primes
-    in possiblePrimes `intersect` possibleFactors
-    where possibleFactors = filter ( `divisibleBy` n) [2..(fromIntegral . floor . sqrt $ fromInteger n)]
+primeFactors n =
+    (concatMap primeFactors np) ++ pfs
+    where
+        factors = filter (\x -> divisibleBy x n) $ possibleFactors n
+        (pfs, np) = partition isPrime factors
 
 triangleNumbers :: [Integer]
 triangleNumbers = f <$> [1..]
@@ -619,4 +623,64 @@ problem46 =
         tenKPrimes = S.fromList $ take 10000 primes
         composites = filter (`S.notMember` tenKPrimes) [3,5..]
 
+-- Boneheaded brute force solution
+problem47 :: [Integer]
+problem47 =
+    consecutivePrimes [644..]
+    where
+    cond x = not . null $ [ fc | fc <- distinctPrimeFactors x, length (nub fc) == 4]
+    consecutivePrimes (a:b:c:d:rest)
+        | cond a && cond b && cond c && cond d = [a,b,c,d]
+        | otherwise = consecutivePrimes (b:c:d:rest)
 
+    distinctFactors x = let
+        lowerFactors = filter (`divisibleBy` x) $ possibleFactors x
+        in [[f, x `div` f] | f <- lowerFactors]
+
+    distinctPrimeFactors :: Integer -> [[Integer]]
+    distinctPrimeFactors x = let
+        factorChains = distinctFactors x
+        expandChain xs = let
+            (pfs, np) = partition (`S.member` pSet ) xs
+            subFactors = concatMap distinctPrimeFactors np
+            in if null subFactors
+            then [pfs]
+            else (<>pfs) <$> subFactors
+        in concatMap expandChain factorChains
+
+    pSet = S.fromList $ take 10000 primes
+
+problem48 :: Integer
+problem48 = (`mod` 10000000000) . sum $ selfPower <$> take 1000 [1..]
+    where
+    selfPower :: Integer -> Integer
+    selfPower n = n ^ n
+
+problem48' :: Integer
+problem48' = foldl' modSum 0 $ selfPower <$> take 1000 [1..]
+    where
+    selfPower :: Integer -> Integer
+    selfPower n = n ^ n
+
+    -- modular arithmetic, very useful for finding the tails of large products/sums!
+    modSum a b = ((a `mod` m) + (b `mod` m)) `mod` m
+    m = 10000000000
+
+problem49 :: [[Int]]
+problem49 = filter isArithmeticSequence .
+    concat .
+    map (map sort. subsequences . map fst) .
+    filter ((<=) 3 . length ) .
+    groupBy (\a b -> snd a == snd b ) .
+    sortOn snd .
+    map (withDigits . fromInteger) .
+    takeWhile (< 10000) $ primes
+    where
+       withDigits x =  (x, numify . sort $ digits x)
+isArithmeticSequence (a:b:c:[]) = b-a == c-b
+isArithmeticSequence (a:b:c:rest) =
+    b-a == c-b && isArithmeticSequence (b:c:rest)
+isArithmeticSequence _ = False
+
+problem50 :: Int
+problem50
