@@ -677,10 +677,14 @@ problem49 = filter isArithmeticSequence .
     takeWhile (< 10000) $ primes
     where
        withDigits x =  (x, numify . sort $ digits x)
-isArithmeticSequence (a:b:c:[]) = b-a == c-b
-isArithmeticSequence (a:b:c:rest) =
-    b-a == c-b && isArithmeticSequence (b:c:rest)
-isArithmeticSequence _ = False
+       isArithmeticSequence (a:b:c:[]) = b-a == c-b
+       isArithmeticSequence (a:b:c:rest) =
+           b-a == c-b && isArithmeticSequence (b:c:rest)
+       isArithmeticSequence _ = False
 
-problem50 :: Int
-problem50
+problem50 :: [Integer]
+problem50 = primesBelow
+    where
+        cap = 1000
+        primesBelow = reverse $ takeWhile (< cap) primes
+
